@@ -1,0 +1,11 @@
+{
+    "train" : {
+        "max_ram_usage": "30G",
+        "name": "train_dataset"
+    },
+    
+    "test" : {
+        "max_num_episodes": null,
+        "name": "test_dataset"
+    }   
+}
