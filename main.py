@@ -1,6 +1,3 @@
-import hydra
-from omegaconf import DictConfig
-
 from trainer import Trainer
 
 

@@ -32,7 +32,8 @@ def tensor_to_np_frames(inputs):
 
 
 def check_float_btw_0_1(inputs):
-    assert inputs.is_floating_point() and (inputs >= 0).all() and (inputs <= 1).all()
+    assert inputs.is_floating_point()
+    assert (inputs >= 0).all() and (inputs <= 1).all()
 
 
 @torch.no_grad()

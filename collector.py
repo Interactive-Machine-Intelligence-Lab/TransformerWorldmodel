@@ -14,7 +14,6 @@ from envs import SingleProcessEnv, MultiProcessEnv
 from episode import Episode
 from utils import EpisodeDirManager, RandomHeuristic
 
-
 class Collector:
     def __init__(self, env: Union[SingleProcessEnv, MultiProcessEnv], dataset: EpisodesDataset, episode_dir_manager: EpisodeDirManager) -> None:
         self.env = env
@@ -57,8 +56,9 @@ class Collector:
             if random.random() < epsilon:
                 act = self.heuristic.act(obs).cpu().numpy()
 
-            self.obs, reward, done, _ = self.env.step(act)
+            pbar.set_postfix({'agent_action' : act})
 
+            self.obs, reward, done, _ = self.env.step(act)
             actions.append(act)
             rewards.append(reward)
             dones.append(done)
@@ -109,6 +109,8 @@ class Collector:
     def add_experience_to_dataset(self, observations: List[np.ndarray], actions: List[np.ndarray], rewards: List[np.ndarray], dones: List[np.ndarray]) -> None:
         assert len(observations) == len(actions) == len(rewards) == len(dones)
         for i, (o, a, r, d) in enumerate(zip(*map(lambda arr: np.swapaxes(arr, 0, 1), [observations, actions, rewards, dones]))):  # Make everything (N, T, ...) instead of (T, N, ...)
+            import matplotlib.pyplot as plt
+            
             episode = Episode(
                 observations=torch.ByteTensor(o).permute(0, 3, 1, 2).contiguous(),  # channel-first
                 actions=torch.LongTensor(a),

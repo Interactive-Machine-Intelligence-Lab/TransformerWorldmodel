@@ -10,7 +10,7 @@
     },
     "common": {
         "epochs": 100,
-        "device": "cuda:0",
+        "device": "mps",
         "do_checkpoint": true,
         "seed": 0,
         "sequence_length": 20
@@ -35,7 +35,7 @@
             "should_sample": true,
             "temperature": 0.5,
             "num_episodes": 16,
-            "burn_in": 20    
+            "burn_in": 20
         }
     },
     "training_settings": {

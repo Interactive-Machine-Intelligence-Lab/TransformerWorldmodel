@@ -86,7 +86,7 @@ class MultiProcessEnv(DoneTrackerEnv):
         done = np.stack(done)
         self.update_done_tracker(done)
         return np.stack(obs), np.stack(rew), done, None
-
+    
     def close(self) -> None:
         for parent_conn in self.parent_conns:
             parent_conn.send(Message(MessageType.CLOSE))

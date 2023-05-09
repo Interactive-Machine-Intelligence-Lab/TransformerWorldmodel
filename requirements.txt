@@ -4,3 +4,4 @@ einops
 numpy
 tqdm
 psutil
+opencv-python

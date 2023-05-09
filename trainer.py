@@ -126,6 +126,7 @@ class Trainer:
                 wandb.log({'epoch': epoch, **metrics})
 
         self.finish()
+        print("end!")
 
     def train_agent(self, epoch: int) -> None:
         self.agent.train()
