@@ -29,6 +29,7 @@ class Game:
 
         self.record_dir = Path('media') / 'recordings'
 
+
         print('Actions:')
         for key, idx in self.keymap.items():
             print(f'{pygame.key.name(key)}: {self.action_names[idx]}')
@@ -119,7 +120,7 @@ class Game:
             self.observations.append(np.array([obs]))
             self.rewards.append(reward)
             self.dones.append(done)
-            self.actions.append(np.array([action]))
+            self.actions.append(np.array(action))
 
 
             img = info['rgb'] if isinstance(self.env, gym.Env) else self.env.render()
@@ -148,20 +149,20 @@ class Game:
                 self.env.reset()
                 do_reset = False
 
-                self.observations = []
-                self.actions = []
-                self.rewards = []
-                self.dones = []
-
                 if self.record_mode:
                     if input('Save episode? [Y/n] ').lower() != 'n':
                         self.save_recording(np.stack(episode_buffer))
                     episode_buffer = []
 
+                self.observations = []
+                self.actions = []
+                self.rewards = []
+                self.dones = []
+
         pygame.quit()
 
     def torch_save(self, dir) -> None:
-        assert len(self.observations) == len(self.actions) == len(self.rewards) == len(self.dones)
+        assert len(self.observations) == len(self.actions) == len(self.rewards) == len(self.dones) != 0
         for i, (o, a, r, d) in enumerate(zip(*map(lambda arr: np.swapaxes(arr, 0, 1), [self.observations, self.actions, self.rewards, self.dones]))):         
             print(torch.ByteTensor(o).shape)
             episode = Episode(

@@ -24,7 +24,18 @@ from envs import make_unity_gym
 from dataset import EpisodesDatasetRamMonitoring, EpisodesDataset
 
 from models.tokenizer import Tokenizer, Encoder, Decoder, EncoderDecoderConfig
-import sqlite3
+import datetime
+
+def create_foldername():
+    now = datetime.datetime.now()
+    year = str(now.year)
+    month = str(now.month).zfill(2)
+    day = str(now.day).zfill(2)
+    hour = str(now.hour).zfill(2)
+    minute = str(now.minute).zfill(2)
+    second = str(now.second).zfill(2)
+    foldername = f"{year}-{month}-{day}_{hour}-{minute}-{second}"
+    return foldername
 
 
 class Trainer:
@@ -45,23 +56,26 @@ class Trainer:
         self.device = torch.device(train_cfg.common.device)
         self.cfg = train_cfg
 
-        self.base_output = Path('output')
+        self.base_output = Path('output') / create_foldername() if not train_cfg.common.resume else train_cfg.common.resume_path
         self.base_output.mkdir(exist_ok=True, parents=False)
         self.ckpt_dir = self.base_output / 'checkpoints'
         self.media_dir = self.base_output / 'media'
         self.episode_dir = self.media_dir / 'episodes'
         self.reconstructions_dir = self.media_dir / 'reconstructions'
 
-
-        self.ckpt_dir.mkdir(exist_ok=True, parents=False)
-        self.media_dir.mkdir(exist_ok=True, parents=False)
-        self.episode_dir.mkdir(exist_ok=True, parents=False)
-        self.reconstructions_dir.mkdir(exist_ok=True, parents=False)
+        if not train_cfg.common.resume:
+            self.ckpt_dir.mkdir(exist_ok=True, parents=False)
+            self.media_dir.mkdir(exist_ok=True, parents=False)
+            self.episode_dir.mkdir(exist_ok=True, parents=False)
+            self.reconstructions_dir.mkdir(exist_ok=True, parents=False)
+        
+        wandb.save(str(self.base_output))
 
 
         episode_manager_train = EpisodeDirManager(self.episode_dir / 'train', max_num_episodes=train_cfg.collector_train.num_episodes_to_save)
         episode_manager_test = EpisodeDirManager(self.episode_dir / 'test', max_num_episodes=train_cfg.collector_test.num_episodes_to_save)
         self.episode_manager_imagination = EpisodeDirManager(self.episode_dir / 'imagination', max_num_episodes=train_cfg.evaluation_settings.actor_critic.num_episodes_to_save)
+
 
         def create_env(num_envs):
             env_fn = partial(make_unity_gym, size=env_cfg.size)
@@ -99,6 +113,8 @@ class Trainer:
         self.optimizer_world_model = configure_optimizer(self.agent.world_model, train_cfg.training_settings.learning_rate, train_cfg.training_settings.world_model.weight_decay)
         self.optimizer_actor_critic = torch.optim.Adam(self.agent.actor_critic.parameters(), lr=train_cfg.training_settings.learning_rate)
 
+        if train_cfg.common.resume:
+            self.load_checkpoint()
 
     def run(self) -> None:
 
