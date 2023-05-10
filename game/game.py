@@ -1,16 +1,17 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 
 import gym
 import numpy as np
 import pygame
 from PIL import Image
+import torch
 
 from envs import WorldModelEnv
 from game.keymap import get_keymap_and_action_names
 from utils import make_video
-
+from episode import Episode
 
 class Game:
     def __init__(self, env: Union[gym.Env, WorldModelEnv], keymap_name: str, size: Tuple[int, int], fps: int, verbose: bool, record_mode: bool) -> None:
@@ -21,6 +22,11 @@ class Game:
         self.record_mode = record_mode
         self.keymap, self.action_names = get_keymap_and_action_names(keymap_name)
 
+        self.observations : List[np.ndarray] = []
+        self.actions : List[np.ndarray] = []
+        self.rewards : List[np.ndarray] = [] 
+        self.dones :List[np.ndarray] = []
+
         self.record_dir = Path('media') / 'recordings'
 
         print('Actions:')
@@ -29,7 +35,7 @@ class Game:
 
     def run(self) -> None:
         pygame.init()
-
+        
         header_height = 100 if self.verbose else 0
         font_size = 24
         screen = pygame.display.set_mode((self.width, self.height + header_height))
@@ -108,7 +114,13 @@ class Game:
             if do_wait:
                 continue
 
-            _, reward, done, info = self.env.step(action)
+            obs, reward, done, info = self.env.step(action)
+            
+            self.observations.append(np.array([obs]))
+            self.rewards.append(reward)
+            self.dones.append(done)
+            self.actions.append(np.array([action]))
+
 
             img = info['rgb'] if isinstance(self.env, gym.Env) else self.env.render()
             draw_game(img)
@@ -136,6 +148,11 @@ class Game:
                 self.env.reset()
                 do_reset = False
 
+                self.observations = []
+                self.actions = []
+                self.rewards = []
+                self.dones = []
+
                 if self.record_mode:
                     if input('Save episode? [Y/n] ').lower() != 'n':
                         self.save_recording(np.stack(episode_buffer))
@@ -143,9 +160,25 @@ class Game:
 
         pygame.quit()
 
+    def torch_save(self, dir) -> None:
+        assert len(self.observations) == len(self.actions) == len(self.rewards) == len(self.dones)
+        for i, (o, a, r, d) in enumerate(zip(*map(lambda arr: np.swapaxes(arr, 0, 1), [self.observations, self.actions, self.rewards, self.dones]))):         
+            print(torch.ByteTensor(o).shape)
+            episode = Episode(
+                observations=torch.ByteTensor(o).permute(0, 3, 1, 2).contiguous(),  # channel-first
+                actions=torch.LongTensor(a),
+                rewards=torch.FloatTensor(r),
+                ends=torch.LongTensor(d),
+                mask_padding=torch.ones(d.shape[0], dtype=torch.bool),
+            )
+
+        episode.save(dir)
+
     def save_recording(self, frames):
         self.record_dir.mkdir(exist_ok=True, parents=True)
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        np.save(self.record_dir / timestamp, frames)
-        make_video(self.record_dir / f'{timestamp}.mp4', fps=15, frames=frames)
+        # np.save(self.record_dir / timestamp, frames)
+        self.torch_save(self.record_dir / (timestamp + '.pt'))
+        # make_video(self.record_dir / f'{timestamp}.mp4', fps=15, frames=frames)
         print(f'Saved recording {timestamp}.')
+        

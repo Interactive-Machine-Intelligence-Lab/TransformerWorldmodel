@@ -1,4 +1,3 @@
-import gym
 import pygame
 
 
@@ -27,8 +26,8 @@ PUSHBLOCK_ACTION_NAMES = [
     'stop',
     'forward',
     'backwrad',
-    'turnleft',
     'turnright',
+    'turnleft',
     'left',
     'right'
 ]
@@ -36,11 +35,11 @@ PUSHBLOCK_ACTION_NAMES = [
 PUSHBLOCK_KEYMAP = {
     pygame.K_SPACE: 0,
     pygame.K_w: 1,
-    pygame.K_d: 6,
-    pygame.K_a: 5,
     pygame.K_s: 2,
     pygame.K_q: 3,
     pygame.K_e: 4,
+    pygame.K_a: 5,
+    pygame.K_d: 6,
 }
 
 EPISODE_REPLAY_ACTION_NAMES = [

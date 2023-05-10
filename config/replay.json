@@ -1,9 +1,9 @@
 {
     "do_reconstruction" : true,
-    "mode" : 4,
+    "mode" : 5,
     "header" : 0,
     "fps" : 15,
-    "save_mode" : 0,
-    "agent_checkpoint_path" : "real/checkpoints/last.pt",
-    "replay_path" : "real/media/episodes"
+    "save_mode" : true,
+    "agent_checkpoint_path" : "output300/checkpoints/last.pt",
+    "replay_path" : "output300/media/episodes"
 }

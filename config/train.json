@@ -1,6 +1,6 @@
 {
     "wandb": {
-        "mode": "disabled",
+        "mode": "online",
         "project": "iris",
         "entity": null,
         "name": null,
@@ -10,7 +10,7 @@
     },
     "common": {
         "epochs": 100,
-        "device": "mps",
+        "device": "cpu",
         "do_checkpoint": true,
         "seed": 0,
         "sequence_length": 20

@@ -4,7 +4,7 @@ import torch
 
 from agent import Agent
 from envs import SingleProcessEnv, WorldModelEnv
-from game import AgentEnv, EpisodeReplayEnv, Game
+from game import AgentEnv, EpisodeReplayEnv, Game, PlayerEnv
 from models.actor_critic import ActorCritic
 from models.world_model import WorldModel, TransformerConfig
 from models.tokenizer import Tokenizer, Encoder, Decoder, EncoderDecoderConfig
@@ -19,7 +19,8 @@ def main():
         1 : "episode_replay",
         2 : 'agent_in_env',
         3 : 'agent_in_world_model',
-        4 : 'play_in_world_model'
+        4 : 'play_in_world_model',
+        5 : 'play_in_env',
     }
     mode = mode_dict[replay_cfg.mode]
 
@@ -63,6 +64,10 @@ def main():
             wm_env = WorldModelEnv(tokenizer=agent.tokenizer, world_model=agent.world_model, device=device, env=env_fn())
             env = AgentEnv(agent, wm_env, do_reconstruction=False)
             keymap = 'empty'
+
+        elif mode == 'play_in_env':
+            env = PlayerEnv(env=test_env)
+            keymap = 'default'
 
     game = Game(env, keymap_name=keymap, size=size, fps=replay_cfg.fps, verbose=bool(replay_cfg.header), record_mode=bool(replay_cfg.save_mode))
     game.run()
