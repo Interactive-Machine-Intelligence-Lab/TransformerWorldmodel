@@ -56,7 +56,7 @@ class Trainer:
         self.device = torch.device(train_cfg.common.device)
         self.cfg = train_cfg
 
-        self.base_output = Path('output') / create_foldername() if not train_cfg.common.resume else train_cfg.common.resume_path
+        self.base_output = Path('output') / create_foldername() if not train_cfg.common.resume else Path(train_cfg.common.resume_path)
         self.base_output.mkdir(exist_ok=True, parents=False)
         self.ckpt_dir = self.base_output / 'checkpoints'
         self.media_dir = self.base_output / 'media'
