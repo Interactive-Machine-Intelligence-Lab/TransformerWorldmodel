@@ -57,21 +57,18 @@ class Trainer:
         self.cfg = train_cfg
 
         self.base_output = Path('output') / create_foldername() if not train_cfg.common.resume else Path(train_cfg.common.resume_path)
-        self.base_output.mkdir(exist_ok=True, parents=False)
         self.ckpt_dir = self.base_output / 'checkpoints'
         self.media_dir = self.base_output / 'media'
         self.episode_dir = self.media_dir / 'episodes'
         self.reconstructions_dir = self.media_dir / 'reconstructions'
 
         if not train_cfg.common.resume:
+            self.base_output.mkdir(exist_ok=True, parents=True)
             self.ckpt_dir.mkdir(exist_ok=True, parents=False)
             self.media_dir.mkdir(exist_ok=True, parents=False)
             self.episode_dir.mkdir(exist_ok=True, parents=False)
             self.reconstructions_dir.mkdir(exist_ok=True, parents=False)
         
-        wandb.save(str(self.base_output))
-
-
         episode_manager_train = EpisodeDirManager(self.episode_dir / 'train', max_num_episodes=train_cfg.collector_train.num_episodes_to_save)
         episode_manager_test = EpisodeDirManager(self.episode_dir / 'test', max_num_episodes=train_cfg.collector_test.num_episodes_to_save)
         self.episode_manager_imagination = EpisodeDirManager(self.episode_dir / 'imagination', max_num_episodes=train_cfg.evaluation_settings.actor_critic.num_episodes_to_save)
