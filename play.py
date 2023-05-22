@@ -14,7 +14,7 @@ from envs import make_unity_gym
 from config import *
 
 def main():
-    device = torch.device(train_cfg.common.device)
+    device = torch.device(replay_cfg.replay_device)
     mode_dict = {
         1 : "episode_replay",
         2 : 'agent_in_env',

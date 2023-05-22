@@ -72,8 +72,6 @@ class Trainer:
             self.episode_dir.mkdir(exist_ok=True, parents=False)
             self.reconstructions_dir.mkdir(exist_ok=True, parents=False)
         
-
-
         episode_manager_train = EpisodeDirManager(self.episode_dir / 'train', max_num_episodes=train_cfg.collector_train.num_episodes_to_save)
         episode_manager_test = EpisodeDirManager(self.episode_dir / 'test', max_num_episodes=train_cfg.collector_test.num_episodes_to_save)
         self.episode_manager_imagination = EpisodeDirManager(self.episode_dir / 'imagination', max_num_episodes=train_cfg.evaluation_settings.actor_critic.num_episodes_to_save)

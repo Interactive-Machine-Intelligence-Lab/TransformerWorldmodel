@@ -116,11 +116,13 @@ class Game:
                 continue
 
             obs, reward, done, info = self.env.step(action)
-            
-            self.observations.append(np.array([obs]))
-            self.rewards.append(reward)
-            self.dones.append(done)
-            self.actions.append(np.array(action))
+
+
+            if self.record_mode:
+                self.observations.append(np.array([obs]))
+                self.rewards.append(reward)
+                self.dones.append(done)
+                self.actions.append(np.array(action))
 
 
             img = info['rgb'] if isinstance(self.env, gym.Env) else self.env.render()
