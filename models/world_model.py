@@ -106,9 +106,6 @@ class WorldModel(nn.Module):
         outputs = self(tokens)
 
         labels_observations, labels_rewards, labels_ends = self.compute_labels_world_model(obs_tokens, batch['rewards'], batch['ends'], batch['mask_padding'])
-        labels_rewards_max = torch.mac(labels_rewards).max()
-        assert labels_rewards_max <= 1.
-
 
         logits_observations = rearrange(outputs.logits_observations[:, :-1], 'b t o -> (b t) o')
         loss_obs = F.cross_entropy(logits_observations, labels_observations)
