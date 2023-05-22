@@ -10,11 +10,11 @@
     },
     "common": {
         "epochs": 100,
-        "device": "cpu",
+        "device": "cuda:0",
         "do_checkpoint": true,
-        "seed": 0,
-        "sequence_length": 20,
-        "resume" : true,
+        "seed": 132,
+        "sequence_length": 150,
+        "resume" : false,
         "resume_path" : "output300"
     },
     "collector_train": {
@@ -35,7 +35,7 @@
         "config": {
             "epsilon": 0.0,
             "should_sample": true,
-            "temperature": 0.5,
+            "temperature": 1,
             "num_episodes": 16,
             "burn_in": 20
         }
@@ -52,7 +52,7 @@
             "steps_per_epoch": 200
         },
         "world_model": {
-            "batch_num_samples": 64,
+            "batch_num_samples": 8,
             "grad_acc_steps": 1,
             "max_grad_norm": 10.0,
             "weight_decay": 0.01,
@@ -60,12 +60,12 @@
             "steps_per_epoch": 200
         },
         "actor_critic": {
-            "batch_num_samples": 64,
+            "batch_num_samples": 8,
             "grad_acc_steps": 1,
             "max_grad_norm": 10.0,
             "start_after_epochs": 50,
             "steps_per_epoch": 200,
-            "imagine_horizon": 20,
+            "imagine_horizon": 150,
             "burn_in": 20,
             "gamma": 0.995,
             "lambda_": 0.95,
@@ -81,12 +81,12 @@
             "save_reconstructions": true
         },
         "world_model": {
-            "batch_num_samples": 64,
+            "batch_num_samples": 8,
             "start_after_epochs": 25
         },
         "actor_critic": {
-            "num_episodes_to_save": 64,
-            "horizon": 20,
+            "num_episodes_to_save": 8,
+            "horizon": 150,
             "start_after_epochs": 50
         }
     }

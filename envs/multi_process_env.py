@@ -26,9 +26,9 @@ class Message:
         return iter(astuple(self))
 
 
-def child_env(child_id: int, env_fn: Callable, child_conn: Connection) -> None:
+def child_env(child_id: int, env, child_conn: Connection) -> None:
     np.random.seed(child_id + np.random.randint(0, 2 ** 31 - 1))
-    env = env_fn(child_id)
+    
     while True:
         message_type, content = child_conn.recv()
         if message_type == MessageType.RESET:
@@ -57,7 +57,8 @@ class MultiProcessEnv(DoneTrackerEnv):
         for child_id in range(num_envs):
             parent_conn, child_conn = Pipe()
             self.parent_conns.append(parent_conn)
-            p = Process(target=child_env, args=(child_id, env_fn, child_conn), daemon=True)
+            cenv = env_fn(child_id)
+            p = Process(target=child_env, args=(child_id, cenv, child_conn), daemon=True)
             self.processes.append(p)
         for p in self.processes:
             p.start()
