@@ -13,7 +13,7 @@
         "device": "cuda:0",
         "do_checkpoint": true,
         "seed": 100,
-        "sequence_length": 30,
+        "sequence_length": 20,
         "resume" : false,
         "resume_path" : "output/2023-05-20_18-51-44"
     },
@@ -26,7 +26,7 @@
             "should_sample": true,
             "temperature": 1.0,
             "num_steps": 1000,
-            "burn_in": 100    
+            "burn_in": 20    
         }
     },
     "collector_test": {
@@ -37,7 +37,7 @@
             "should_sample": true,
             "temperature": 0.5,
             "num_episodes": 16,
-            "burn_in": 100
+            "burn_in": 20
         }
     },
     "training_settings": {
@@ -65,8 +65,8 @@
             "max_grad_norm": 10.0,
             "start_after_epochs": 50,
             "steps_per_epoch": 200,
-            "imagine_horizon": 30,
-            "burn_in": 100,
+            "imagine_horizon": 20,
+            "burn_in": 20,
             "gamma": 0.995,
             "lambda_": 0.95,
             "entropy_weight": 0.001
@@ -86,7 +86,7 @@
         },
         "actor_critic": {
             "num_episodes_to_save": 64,
-            "horizon": 30,
+            "horizon": 20,
             "start_after_epochs": 50
         }
     }
