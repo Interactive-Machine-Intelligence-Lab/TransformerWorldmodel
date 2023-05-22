@@ -1,0 +1,93 @@
+{
+    "wandb": {
+        "mode": "disabled",
+        "project": "iris",
+        "entity": null,
+        "name": null,
+        "group": null,
+        "tags": null,
+        "notes": null
+    },
+    "common": {
+        "epochs": 100,
+        "device": "cuda:3",
+        "do_checkpoint": true,
+        "seed": 1520,
+        "sequence_length": 100,
+        "resume" : false,
+        "resume_path" : "output300"
+    },
+    "collector_train": {
+        "num_env": 1,
+        "stop_after_epochs": 500,
+        "num_episodes_to_save": 10,
+        "config": {
+            "epsilon": 0.01,
+            "should_sample": true,
+            "temperature": 1.0,
+            "num_steps": 1000,
+            "burn_in": 20    
+        }
+    },
+    "collector_test": {
+        "num_env": 8,
+        "num_episodes_to_save": 10,
+        "config": {
+            "epsilon": 0.0,
+            "should_sample": true,
+            "temperature": 1.0,
+            "num_episodes": 16,
+            "burn_in": 20
+        }
+    },
+    "training_settings": {
+        "should": true,
+        "learning_rate": 0.0001,
+        "sampling_weights": [0.125, 0.125, 0.25, 0.5],
+        "tokenizer": {
+            "batch_num_samples": 256,
+            "grad_acc_steps": 1,
+            "max_grad_norm": 10.0,
+            "start_after_epochs": 5,
+            "steps_per_epoch": 200
+        },
+        "world_model": {
+            "batch_num_samples": 25,
+            "grad_acc_steps": 1,
+            "max_grad_norm": 10.0,
+            "weight_decay": 0.01,
+            "start_after_epochs": 25,
+            "steps_per_epoch": 200
+        },
+        "actor_critic": {
+            "batch_num_samples": 25,
+            "grad_acc_steps": 1,
+            "max_grad_norm": 10.0,
+            "start_after_epochs": 50,
+            "steps_per_epoch": 200,
+            "imagine_horizon": 100,
+            "burn_in": 20,
+            "gamma": 0.995,
+            "lambda_": 0.95,
+            "entropy_weight": 0.001
+        }
+    },
+    "evaluation_settings": {
+        "should": true,
+        "every": 5,
+        "tokenizer": {
+            "batch_num_samples": 256,
+            "start_after_epochs": 5,
+            "save_reconstructions": true
+        },
+        "world_model": {
+            "batch_num_samples": 25,
+            "start_after_epochs": 25
+        },
+        "actor_critic": {
+            "num_episodes_to_save": 25,
+            "horizon": 100,
+            "start_after_epochs": 50
+        }
+    }
+}

@@ -44,9 +44,12 @@ class Trainer:
         wandb.init(
             config=dict(train_cfg),
             reinit=True,
-            resume=True,
+            resume=False,
             **train_cfg.wandb
         )
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+
 
 
         if train_cfg.common.seed is not None:
@@ -102,6 +105,12 @@ class Trainer:
         world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=env.num_actions, config=TransformerConfig(**worldmodel_cfg))
         actor_critic = ActorCritic(**ac_cfg, act_vocab_size=env.num_actions)
         self.agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
+        # self.agent = ParallelAgent(tokenizer, world_model, actor_critic).cuda()
+
+
+        # if 'cuda' in train_cfg.common.device:
+        #     self.agent = torch.nn.DataParallel(self.agent, device_ids=[1, 2, 3])
+        # else:
         print(f'{sum(p.numel() for p in self.agent.tokenizer.parameters())} parameters in agent.tokenizer')
         print(f'{sum(p.numel() for p in self.agent.world_model.parameters())} parameters in agent.world_model')
         print(f'{sum(p.numel() for p in self.agent.actor_critic.parameters())} parameters in agent.actor_critic')

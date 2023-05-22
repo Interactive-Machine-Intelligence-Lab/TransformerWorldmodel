@@ -3,8 +3,9 @@ from enum import Enum
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from typing import Any, Callable, Iterator, List, Optional, Tuple
-
+# from pyvirtualdisplay import Display
 import numpy as np
+import os
 
 from envs.done_tracker import DoneTrackerEnv
 
@@ -26,10 +27,14 @@ class Message:
         return iter(astuple(self))
 
 
-def child_env(child_id: int, env_fn: Callable, child_conn: Connection) -> None:
-    np.random.seed(child_id + np.random.randint(0, 2 ** 31 - 1))
-    env = env_fn(child_id)
-    while True:
+def child_env(child_id: int, env, child_conn: Connection) -> None:
+      np.random.seed(child_id + np.random.randint(0, 2 ** 31 - 1))
+    #disp = Display()
+    #disp.start()
+    #with SmartDisplay(manage_global_env=False) as disp:
+
+      
+      while True:
         message_type, content = child_conn.recv()
         if message_type == MessageType.RESET:
             obs = env.reset()
@@ -41,9 +46,11 @@ def child_env(child_id: int, env_fn: Callable, child_conn: Connection) -> None:
             child_conn.send(Message(MessageType.STEP_RETURN, (obs, rew, done, None)))
         elif message_type == MessageType.CLOSE:
             child_conn.close()
+            #disp.close()
             return
         else:
             raise NotImplementedError
+    
 
 
 class MultiProcessEnv(DoneTrackerEnv):
@@ -57,7 +64,8 @@ class MultiProcessEnv(DoneTrackerEnv):
         for child_id in range(num_envs):
             parent_conn, child_conn = Pipe()
             self.parent_conns.append(parent_conn)
-            p = Process(target=child_env, args=(child_id, env_fn, child_conn), daemon=True)
+            cenv = env_fn(child_id)
+            p = Process(target=child_env, args=(child_id, cenv, child_conn), daemon=True)
             self.processes.append(p)
         for p in self.processes:
             p.start()

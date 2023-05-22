@@ -72,7 +72,10 @@ class WorldModelEnv:
             output_sequence.append(outputs_wm.output_sequence)
 
             if k == 0:
-                reward = Categorical(logits=outputs_wm.logits_rewards).sample().float().cpu().numpy().reshape(-1) - 1   # (B,)
+                # reward = Categorical(logits=outputs_wm.logits_rewards).sample().float().cpu().numpy().reshape(-1) - 1   # (B,)
+                # reward = outputs_wm.logits_rewards[0].sample().float().cpu().numpy() # (B,)
+                # reward = outputs_wm.logits_rewards[0].float().cpu().numpy() # (B,)
+                reward = outputs_wm.logits_rewards.float().cpu().numpy() # (B,)
                 done = Categorical(logits=outputs_wm.logits_ends).sample().cpu().numpy().astype(bool).reshape(-1)       # (B,)
 
             if k < self.num_observations_tokens:

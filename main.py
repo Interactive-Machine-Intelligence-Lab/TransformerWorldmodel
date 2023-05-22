@@ -1,9 +1,11 @@
 from trainer import Trainer
+from pyvirtualdisplay.display import Display
 
 
 def main():
-    trainer = Trainer()
-    trainer.run()
+    with Display() as disp:
+        trainer = Trainer()
+        trainer.run()
 
 
 if __name__ == "__main__":

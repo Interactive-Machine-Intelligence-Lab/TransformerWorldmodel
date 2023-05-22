@@ -10,6 +10,13 @@ from models.world_model import WorldModel
 from utils import extract_state_dict
 
 
+class MyDataParallel(torch.nn.DataParallel):
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.module, name)
+
 class Agent(nn.Module):
     def __init__(self, tokenizer: Tokenizer, world_model: WorldModel, actor_critic: ActorCritic):
         super().__init__()

@@ -48,6 +48,9 @@ class Collector:
         agent.actor_critic.reset(n=self.env.num_envs, burnin_observations=burnin_obs_rec, mask_padding=mask_padding)
         pbar = tqdm(total=num_steps if num_steps is not None else num_episodes, desc=f'Experience collection ({self.dataset.name})', file=sys.stdout)
 
+        max_sofar = -10000
+        min_sofar = 10000
+
         while not should_stop(steps, episodes):
 
             observations.append(self.obs)
@@ -59,6 +62,13 @@ class Collector:
             pbar.set_postfix({'agent_action' : act})
 
             self.obs, reward, done, _ = self.env.step(act)
+            if max_sofar < reward[0]:
+                max_sofar = reward[0]
+                print('@@@@@@@@@@', max_sofar)
+            if min_sofar > reward[0]:
+                min_sofar = reward[0]
+                print('##########', min_sofar)
+
             actions.append(act)
             rewards.append(reward)
             dones.append(done)
