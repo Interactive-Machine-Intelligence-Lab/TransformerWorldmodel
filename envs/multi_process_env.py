@@ -62,9 +62,10 @@ class MultiProcessEnv(DoneTrackerEnv):
         self.should_wait_num_envs_ratio = should_wait_num_envs_ratio
         self.processes, self.parent_conns = [], []
         for child_id in range(num_envs):
+            cenv = env_fn(child_id)
             parent_conn, child_conn = Pipe()
             self.parent_conns.append(parent_conn)
-            cenv = env_fn(child_id)
+            
             p = Process(target=child_env, args=(child_id, cenv, child_conn), daemon=True)
             self.processes.append(p)
         for p in self.processes:
