@@ -9,13 +9,13 @@
         "notes": null
     },
     "common": {
-        "epochs": 100,
-        "device": "cpu",
+        "epochs": 1000,
+        "device": "cuda:0",
         "do_checkpoint": true,
         "seed": 0,
         "sequence_length": 20,
-        "resume" : true,
-        "resume_path" : "output300"
+        "resume" : false,
+        "resume_path" : "output/2023-05-20_18-51-44"
     },
     "collector_train": {
         "num_env": 1,
@@ -30,13 +30,13 @@
         }
     },
     "collector_test": {
-        "num_env": 8,
-        "num_episodes_to_save": 10,
+        "num_env": 1,
+        "num_episodes_to_save": 1,
         "config": {
             "epsilon": 0.0,
             "should_sample": true,
             "temperature": 0.5,
-            "num_episodes": 16,
+            "num_episodes": 1,
             "burn_in": 20
         }
     },

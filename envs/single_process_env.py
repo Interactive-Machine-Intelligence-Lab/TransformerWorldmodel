@@ -8,7 +8,8 @@ from .done_tracker import DoneTrackerEnv
 class SingleProcessEnv(DoneTrackerEnv):
     def __init__(self, env_fn):
         super().__init__(num_envs=1)
-        self.env = env_fn(9998)
+        randpid = np.random.randint(1, 1000)
+        self.env = env_fn(randpid)
         self.num_actions = self.env.action_space.n
 
     def should_reset(self) -> bool:

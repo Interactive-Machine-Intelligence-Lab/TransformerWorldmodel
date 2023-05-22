@@ -59,6 +59,9 @@ class Collector:
             pbar.set_postfix({'agent_action' : act})
 
             self.obs, reward, done, _ = self.env.step(act)
+            print("@@@@@@@@@@@@@@@@@@", reward)
+            assert (-1 <= reward <=1) or (-101 <= reward <= -100)
+
             actions.append(act)
             rewards.append(reward)
             dones.append(done)
