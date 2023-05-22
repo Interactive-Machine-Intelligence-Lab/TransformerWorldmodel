@@ -3,6 +3,15 @@ from typing import Tuple
 import numpy as np
 from PIL import Image
 
+class RewardWrapper(gym.Wrapper):
+    def step(self, action):
+        """Modifies the reward using :meth:`self.reward` after the environment :meth:`env.step`."""
+        observation, reward, terminated, truncated = self.env.step(action)
+        return observation, self.reward(reward), terminated, truncated
+
+    def reward(self, reward):
+        return np.clip(reward, -1, 1)
+    
 
 class ResizeObsWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env, size: Tuple[int, int]) -> None:
