@@ -16,6 +16,7 @@ class MessageType(Enum):
     STEP = 2
     STEP_RETURN = 3
     CLOSE = 4
+    ERROR = 5
 
 
 @dataclass
@@ -28,12 +29,8 @@ class Message:
 
 
 def child_env(child_id: int, env, child_conn: Connection) -> None:
-      np.random.seed(child_id + np.random.randint(0, 2 ** 31 - 1))
-    #disp = Display()
-    #disp.start()
-    #with SmartDisplay(manage_global_env=False) as disp:
-
-      
+    np.random.seed(child_id + np.random.randint(0, 2 ** 31 - 1))
+    try:
       while True:
         message_type, content = child_conn.recv()
         if message_type == MessageType.RESET:
@@ -50,6 +47,10 @@ def child_env(child_id: int, env, child_conn: Connection) -> None:
             return
         else:
             raise NotImplementedError
+    except Exception as e:
+        print("Error Occured!")
+        print(e)
+        child_conn.send(Message(MessageType.ERROR))
     
 
 
@@ -76,6 +77,7 @@ class MultiProcessEnv(DoneTrackerEnv):
 
     def _receive(self, check_type: Optional[MessageType] = None) -> List[Any]:
         messages = [parent_conn.recv() for parent_conn in self.parent_conns]
+        assert all([m.type != MessageType.ERROR for m in messages])
         if check_type is not None:
             assert all([m.type == check_type for m in messages])
         return [m.content for m in messages]
