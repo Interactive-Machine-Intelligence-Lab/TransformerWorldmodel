@@ -60,7 +60,7 @@ class WorldModel(nn.Module):
                 nn.Linear(config.embed_dim, config.embed_dim),
                 nn.ReLU(),
                 nn.Linear(config.embed_dim, 1),
-                nn.Sigmoid(),
+                nn.Tanh(),
             )
         )
 
