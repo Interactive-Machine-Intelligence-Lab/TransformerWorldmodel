@@ -95,6 +95,16 @@ class WorldModel(nn.Module):
 
         return WorldModelOutput(x, logits_observations, logits_rewards, logits_ends)
 
+
+    def mse_loss(self, input, target, ignored_index=-100, reduction='mean'):
+        mask = target == ignored_index
+        out = (input[~mask]-target[~mask])**2
+        if reduction == "mean":
+            return out.mean()
+        elif reduction == "None":
+            return out
+
+
     def compute_loss(self, batch: Batch, tokenizer: Tokenizer, **kwargs: Any) -> LossWithIntermediateLosses:
 
         with torch.no_grad():
@@ -109,7 +119,7 @@ class WorldModel(nn.Module):
 
         logits_observations = rearrange(outputs.logits_observations[:, :-1], 'b t o -> (b t) o')
         loss_obs = F.cross_entropy(logits_observations, labels_observations)
-        loss_rewards = F.mse_loss(rearrange(outputs.logits_rewards, 'b t e -> (b t e)'), labels_rewards)
+        loss_rewards = self.mse_loss(rearrange(outputs.logits_rewards, 'b t e -> (b t e)'), labels_rewards)
         loss_ends = F.cross_entropy(rearrange(outputs.logits_ends, 'b t e -> (b t) e'), labels_ends)
 
         return LossWithIntermediateLosses(loss_obs=loss_obs, loss_rewards=loss_rewards, loss_ends=loss_ends)
