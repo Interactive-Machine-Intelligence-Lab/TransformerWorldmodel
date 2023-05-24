@@ -9,7 +9,7 @@ def make_unity_gym(pid=0, size=64):
 
     worker_id = pid
     print('Making Workder Id :', worker_id)
-    env = UnityEnvironment('envs/pushblock/Startup.x86_64', worker_id=worker_id, log_folder='logs')
+    env = UnityEnvironment('envs/pushblock/GreenBlock.x86_64', worker_id=worker_id, log_folder='logs')
     #env = default_registry[env_name].make(worker_id=worker_id, log_folder='logs')
     
     

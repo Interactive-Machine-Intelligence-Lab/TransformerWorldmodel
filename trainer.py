@@ -44,7 +44,7 @@ class Trainer:
         wandb.init(
             config=dict(train_cfg),
             reinit=True,
-            resume=False,
+            resume=True,
             **train_cfg.wandb
         )
         torch.backends.cuda.matmul.allow_tf32 = False

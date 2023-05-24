@@ -1,6 +1,6 @@
 {
     "wandb": {
-        "mode": "disabled",
+        "mode": "online",
         "project": "iris",
         "entity": null,
         "name": null,
@@ -30,13 +30,13 @@
         }
     },
     "collector_test": {
-        "num_env": 8,
+        "num_env": 1,
         "num_episodes_to_save": 10,
         "config": {
             "epsilon": 0.0,
             "should_sample": true,
             "temperature": 0.5,
-            "num_episodes": 16,
+            "num_episodes": 1,
             "burn_in": 20
         }
     },
