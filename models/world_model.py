@@ -47,9 +47,13 @@ class WorldModel(nn.Module):
             max_blocks=config.max_blocks,
             block_mask=all_but_last_obs_tokens_pattern,
             head_module=nn.Sequential(
-                nn.Linear(config.embed_dim, config.embed_dim),
+                nn.Linear(config.embed_dim, config.embed_dim // 2),
                 nn.ReLU(),
-                nn.Linear(config.embed_dim, obs_vocab_size)
+                nn.Linear(config.embed_dim // 2, config.embed_dim // 4),
+                nn.ReLU(),
+                nn.Linear(config.embed_dim // 4, config.embed_dim // 8),
+                nn.ReLU(),
+                nn.Linear(config.embed_dim // 8, obs_vocab_size)
             )
         )
 
@@ -57,9 +61,13 @@ class WorldModel(nn.Module):
             max_blocks=config.max_blocks,
             block_mask=act_tokens_pattern,
             head_module=nn.Sequential(
-                nn.Linear(config.embed_dim, config.embed_dim),
+                nn.Linear(config.embed_dim, config.embed_dim // 2),
                 nn.ReLU(),
-                nn.Linear(config.embed_dim, 1),
+                nn.Linear(config.embed_dim // 2, config.embed_dim // 4),
+                nn.ReLU(),
+                nn.Linear(config.embed_dim // 4, config.embed_dim // 8),
+                nn.ReLU(),
+                nn.Linear(config.embed_dim // 8, 1),
                 nn.Tanh(),
             )
         )
@@ -68,9 +76,13 @@ class WorldModel(nn.Module):
             max_blocks=config.max_blocks,
             block_mask=act_tokens_pattern,
             head_module=nn.Sequential(
-                nn.Linear(config.embed_dim, config.embed_dim),
+                nn.Linear(config.embed_dim, config.embed_dim // 2),
                 nn.ReLU(),
-                nn.Linear(config.embed_dim, 2)
+                nn.Linear(config.embed_dim // 2, config.embed_dim // 4),
+                nn.ReLU(),
+                nn.Linear(config.embed_dim // 4, config.embed_dim // 8),
+                nn.ReLU(),
+                nn.Linear(config.embed_dim // 8, 2)
             )
         )
 
