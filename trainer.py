@@ -94,19 +94,19 @@ class Trainer:
             episode_managers_test.append(episode_manager_test)
             self.episode_managers_imagination.append(episode_manager_imagination)
 
-        def create_env(num_envs):
+        def create_env(num_envs, pid):
             env_fn = partial(make_unity_gym, size=env_cfg.size)
-            return MultiProcessEnv(env_fn, num_envs, should_wait_num_envs_ratio=1.0) if num_envs > 1 else SingleProcessEnv(env_fn, self.cfg.collector_train.pid)
+            return MultiProcessEnv(env_fn, num_envs, should_wait_num_envs_ratio=1.0) if num_envs > 1 else SingleProcessEnv(env_fn, pid=pid)
 
         if self.cfg.training_settings.should:
-            train_env = create_env(train_cfg.collector_train.num_env)
+            train_env = create_env(train_cfg.collector_train.num_env, pid=self.cfg.collector_train.pid)
             self.train_datasets = []
             for agent_id in range(self.agent_num):
                self.train_datasets.append(EpisodesDatasetRamMonitoring(**col_cfg.train))
             self.train_collector = Collector(train_env, self.train_datasets, episode_managers_train)
 
         if self.cfg.evaluation_settings.should:
-            test_env = create_env(train_cfg.collector_test.num_env)
+            test_env = create_env(train_cfg.collector_test.num_env, pid=self.cfg.collector_test.pid)
             self.test_datasets = []
             for agent_id in range(self.agent_num):
                 self.test_datasets.append(EpisodesDataset(**col_cfg.test))
