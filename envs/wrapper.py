@@ -62,7 +62,45 @@ class NoopResetEnv(gym.Wrapper):
     def step(self, action):
         return self.env.step(action)
 
+class MultiAgentRewardWrapper(gym.Wrapper):
+    def step(self, action):
+        """Modifies the reward using :meth:`self.reward` after the environment :meth:`env.step`."""
+        observation, reward, terminated, truncated = self.env.step(action)
+        return observation, self.reward(reward), terminated, truncated
+    
+    def reward(self, reward):
+        new_reward = []
+        for rwd in reward:
+            new_reward.append(np.clip(rwd, -1, 1))
+        return new_reward
+    
 
+class MultiAgentResizeObsWrapper(gym.Wrapper):
+    def __init__(self, env: gym.Env, size: Tuple[int, int]) -> None:
+        gym.ObservationWrapper.__init__(self, env)
+        self.size = tuple(size)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(size[0], size[1], 3), dtype=np.uint8)
+        self.unwrapped.original_obs = None
 
+    def _dict2list(self, dict):
+        return list(dict.values())
 
+    def resize(self, obs):
+        for agent_id in obs:
+            temp_img = np.array(obs[agent_id]).astype(np.uint8)
+            img = Image.fromarray(temp_img)
+            img = img.resize(self.size, Image.BILINEAR)
+            obs[agent_id] = np.array(img)
+        return obs
 
+    def observation(self, observation: np.ndarray) -> np.ndarray:
+        self.unwrapped.original_obs = observation
+        return self.resize(observation)
+    
+    def step(self, action):
+        observation, reward, terminated, truncated = self.env.step(action)
+        return self.observation(observation), reward, terminated, truncated
+
+    def reset(self, **kwargs):
+        obs = self.env.reset(**kwargs)
+        return self.observation(obs)

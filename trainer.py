@@ -47,10 +47,6 @@ class Trainer:
             resume=True,
             **train_cfg.wandb
         )
-        torch.backends.cuda.matmul.allow_tf32 = False
-        torch.backends.cudnn.allow_tf32 = False
-
-
 
         if train_cfg.common.seed is not None:
             set_seed(train_cfg.common.seed)
@@ -59,11 +55,18 @@ class Trainer:
         self.device = torch.device(train_cfg.common.device)
         self.cfg = train_cfg
 
+        self.agent_num = 2
+        self.agents = []
+        self.optimizers_tokenizer = []
+        self.optimizers_world_model = []
+        self.optimizers_actor_critic = []
+
         self.base_output = Path('output') / create_foldername() if not train_cfg.common.resume else Path(train_cfg.common.resume_path)
         self.ckpt_dir = self.base_output / 'checkpoints'
         self.media_dir = self.base_output / 'media'
         self.episode_dir = self.media_dir / 'episodes'
         self.reconstructions_dir = self.media_dir / 'reconstructions'
+
 
         if not train_cfg.common.resume:
             self.base_output.mkdir(exist_ok=True, parents=True)
@@ -71,51 +74,74 @@ class Trainer:
             self.media_dir.mkdir(exist_ok=True, parents=False)
             self.episode_dir.mkdir(exist_ok=True, parents=False)
             self.reconstructions_dir.mkdir(exist_ok=True, parents=False)
-        
-        episode_manager_train = EpisodeDirManager(self.episode_dir / 'train', max_num_episodes=train_cfg.collector_train.num_episodes_to_save)
-        episode_manager_test = EpisodeDirManager(self.episode_dir / 'test', max_num_episodes=train_cfg.collector_test.num_episodes_to_save)
-        self.episode_manager_imagination = EpisodeDirManager(self.episode_dir / 'imagination', max_num_episodes=train_cfg.evaluation_settings.actor_critic.num_episodes_to_save)
 
+            for agent_id in range(self.agent_num):
+                agent_path = self.ckpt_dir / f'agent{agent_id}'
+                agent_path.mkdir(parents=True, exist_ok=True)
+                recon_path = self.reconstructions_dir / f'agent{agent_id}'
+                recon_path.mkdir(parents=True, exist_ok=True)
+
+        
+        episode_managers_train = []
+        episode_managers_test = []
+        self.episode_managers_imagination = []
+
+        for agent_id in range(self.agent_num):
+            episode_manager_train = EpisodeDirManager(self.episode_dir / 'train' / f'agent{agent_id}', max_num_episodes=train_cfg.collector_train.num_episodes_to_save)
+            episode_manager_test = EpisodeDirManager(self.episode_dir / 'test' / f'agent{agent_id}', max_num_episodes=train_cfg.collector_test.num_episodes_to_save)
+            episode_manager_imagination = EpisodeDirManager(self.episode_dir / 'imagination' / f'agent{agent_id}', max_num_episodes=train_cfg.evaluation_settings.actor_critic.num_episodes_to_save)
+            episode_managers_train.append(episode_manager_train)
+            episode_managers_test.append(episode_manager_test)
+            self.episode_managers_imagination.append(episode_manager_imagination)
 
         def create_env(num_envs):
             env_fn = partial(make_unity_gym, size=env_cfg.size)
-            return MultiProcessEnv(env_fn, num_envs, should_wait_num_envs_ratio=1.0) if num_envs > 1 else SingleProcessEnv(env_fn)
+            return MultiProcessEnv(env_fn, num_envs, should_wait_num_envs_ratio=1.0) if num_envs > 1 else SingleProcessEnv(env_fn, self.cfg.collector_train.pid)
 
         if self.cfg.training_settings.should:
             train_env = create_env(train_cfg.collector_train.num_env)
-            self.train_dataset = EpisodesDatasetRamMonitoring(**col_cfg.train)
-            self.train_collector = Collector(train_env, self.train_dataset, episode_manager_train)
+            self.train_datasets = []
+            for agent_id in range(self.agent_num):
+               self.train_datasets.append(EpisodesDatasetRamMonitoring(**col_cfg.train))
+            self.train_collector = Collector(train_env, self.train_datasets, episode_managers_train)
 
         if self.cfg.evaluation_settings.should:
             test_env = create_env(train_cfg.collector_test.num_env)
-            self.test_dataset = EpisodesDataset(**col_cfg.test)
-            self.test_collector = Collector(test_env, self.test_dataset, episode_manager_test)
+            self.test_datasets = []
+            for agent_id in range(self.agent_num):
+                self.test_datasets.append(EpisodesDataset(**col_cfg.test))
+            self.test_collector = Collector(test_env, self.test_datasets, episode_managers_test)
 
         assert self.cfg.training_settings.should or self.cfg.evaluation_settings.should
         env = train_env if self.cfg.training_settings.should else test_env
 
+        for agent_id in range(self.agent_num):
+            print(f"------------- Build Agent and Optimizer(id : {agent_id}) -------------")
+            tokenizer = Tokenizer(
+                vocab_size=tok_cfg.tokenizer.vocab_size, 
+                embed_dim=tok_cfg.tokenizer.embed_dim,
+                encoder=Encoder(EncoderDecoderConfig(**tok_cfg.tokenizer.encoder)),
+                decoder=Decoder(EncoderDecoderConfig(**tok_cfg.tokenizer.decoder))
+            )
 
-        tokenizer = Tokenizer(
-            vocab_size=tok_cfg.tokenizer.vocab_size, 
-            embed_dim=tok_cfg.tokenizer.embed_dim,
-            encoder=Encoder(EncoderDecoderConfig(**tok_cfg.tokenizer.encoder)),
-            decoder=Decoder(EncoderDecoderConfig(**tok_cfg.tokenizer.decoder))
-        )
+            world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=env.num_actions, config=TransformerConfig(**worldmodel_cfg))
+            actor_critic = ActorCritic(**ac_cfg, act_vocab_size=env.num_actions)
+            agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
+            self.agents.append(agent)
 
-        world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=env.num_actions, config=TransformerConfig(**worldmodel_cfg))
-        actor_critic = ActorCritic(**ac_cfg, act_vocab_size=env.num_actions)
-        self.agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
+            print(f'{sum(p.numel() for p in agent.tokenizer.parameters())} parameters in agent.tokenizer')
+            print(f'{sum(p.numel() for p in agent.actor_critic.parameters())} parameters in agent.actor_critic')
+            print(f'{sum(p.numel() for p in agent.world_model.parameters())} parameters in agent.world_model')
 
-        print(f'{sum(p.numel() for p in self.agent.tokenizer.parameters())} parameters in agent.tokenizer')
-        print(f'{sum(p.numel() for p in self.agent.world_model.parameters())} parameters in agent.world_model')
-        print(f'{sum(p.numel() for p in self.agent.actor_critic.parameters())} parameters in agent.actor_critic')
+            optimizer_tokenizer = torch.optim.Adam(agent.tokenizer.parameters(), lr=train_cfg.training_settings.learning_rate)
+            optimizer_world_model = configure_optimizer(agent.world_model, train_cfg.training_settings.learning_rate, train_cfg.training_settings.world_model.weight_decay)
+            optimizer_actor_critic = torch.optim.Adam(agent.actor_critic.parameters(), lr=train_cfg.training_settings.learning_rate)
 
-        self.optimizer_tokenizer = torch.optim.Adam(self.agent.tokenizer.parameters(), lr=train_cfg.training_settings.learning_rate)
-        self.optimizer_world_model = configure_optimizer(self.agent.world_model, train_cfg.training_settings.learning_rate, train_cfg.training_settings.world_model.weight_decay)
-        self.optimizer_actor_critic = torch.optim.Adam(self.agent.actor_critic.parameters(), lr=train_cfg.training_settings.learning_rate)
-
-        if train_cfg.common.resume:
-            self.load_checkpoint()
+            self.optimizers_tokenizer.append(optimizer_tokenizer)
+            self.optimizers_world_model.append(optimizer_world_model)
+            self.optimizers_actor_critic.append(optimizer_actor_critic)
+            if train_cfg.common.resume:
+                self.load_checkpoint(agent_id)
 
     def run(self) -> None:
 
@@ -127,12 +153,13 @@ class Trainer:
 
             if self.cfg.training_settings.should:
                 if epoch <= self.cfg.collector_train.stop_after_epochs:
-                    to_log += self.train_collector.collect(self.agent, epoch, **self.cfg.collector_train.config)
+                    to_log += self.train_collector.collect(self.agents, epoch, **self.cfg.collector_train.config)
                 to_log += self.train_agent(epoch)
 
             if self.cfg.evaluation_settings.should and (epoch % self.cfg.evaluation_settings.every == 0):
-                self.test_dataset.clear()
-                to_log += self.test_collector.collect(self.agent, epoch, **self.cfg.collector_test.config)
+                for agents_id in range(self.agent_num):
+                    self.test_datasets[agents_id].clear()
+                to_log += self.test_collector.collect(self.agents, epoch, **self.cfg.collector_test.config)
                 to_log += self.eval_agent(epoch)
 
             if self.cfg.training_settings.should:
@@ -146,39 +173,42 @@ class Trainer:
         print("end!")
 
     def train_agent(self, epoch: int) -> None:
-        self.agent.train()
-        self.agent.zero_grad()
+        for agent in self.agents:
+            agent.train()
+            agent.zero_grad()
+        logs = []
 
-        metrics_tokenizer, metrics_world_model, metrics_actor_critic = {}, {}, {}
+        for agent_id in range(self.agent_num):
+            metrics_tokenizer, metrics_world_model, metrics_actor_critic = {}, {}, {}
 
-        cfg_tokenizer = self.cfg.training_settings.tokenizer
-        cfg_world_model = self.cfg.training_settings.world_model
-        cfg_actor_critic = self.cfg.training_settings.actor_critic
+            cfg_tokenizer = self.cfg.training_settings.tokenizer
+            cfg_world_model = self.cfg.training_settings.world_model
+            cfg_actor_critic = self.cfg.training_settings.actor_critic
 
-        w = self.cfg.training_settings.sampling_weights
+            w = self.cfg.training_settings.sampling_weights
 
-        if epoch > cfg_tokenizer.start_after_epochs:
-            metrics_tokenizer = self.train_component(self.agent.tokenizer, self.optimizer_tokenizer, sequence_length=1, sample_from_start=True, sampling_weights=w, **cfg_tokenizer)
-        self.agent.tokenizer.eval()
+            if epoch > cfg_tokenizer.start_after_epochs:
+                metrics_tokenizer = self.train_component(self.agents[agent_id].tokenizer, self.optimizers_tokenizer[agent_id], sequence_length=1, sample_from_start=True, sampling_weights=w, agent_id=agent_id, **cfg_tokenizer)
+            self.agents[agent_id].tokenizer.eval()
 
-        if epoch > cfg_world_model.start_after_epochs:
-            metrics_world_model = self.train_component(self.agent.world_model, self.optimizer_world_model, sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, tokenizer=self.agent.tokenizer, **cfg_world_model)
-        self.agent.world_model.eval()
+            if epoch > cfg_world_model.start_after_epochs:
+                metrics_world_model = self.train_component(self.agents[agent_id].world_model, self.optimizers_world_model[agent_id], sequence_length=self.cfg.common.sequence_length, sample_from_start=True, sampling_weights=w, tokenizer=self.agents[agent_id].tokenizer, agent_id=agent_id, **cfg_world_model)
+            self.agents[agent_id].world_model.eval()
 
-        if epoch > cfg_actor_critic.start_after_epochs:
-            metrics_actor_critic = self.train_component(self.agent.actor_critic, self.optimizer_actor_critic, sequence_length=1 + self.cfg.training_settings.actor_critic.burn_in, sample_from_start=False, sampling_weights=w, tokenizer=self.agent.tokenizer, world_model=self.agent.world_model, **cfg_actor_critic)
-        self.agent.actor_critic.eval()
+            if epoch > cfg_actor_critic.start_after_epochs:
+                metrics_actor_critic = self.train_component(self.agents[agent_id].actor_critic, self.optimizers_actor_critic[agent_id], sequence_length=1 + self.cfg.training_settings.actor_critic.burn_in, sample_from_start=False, sampling_weights=w, tokenizer=self.agents[agent_id].tokenizer, world_model=self.agents[agent_id].world_model, agent_id=agent_id, **cfg_actor_critic)
+            self.agents[agent_id].actor_critic.eval()
+            logs.append({f'agent{agent_id}/epoch': epoch, **metrics_tokenizer, **metrics_world_model, **metrics_actor_critic})
+        return logs
 
-        return [{'epoch': epoch, **metrics_tokenizer, **metrics_world_model, **metrics_actor_critic}]
-
-    def train_component(self, component: nn.Module, optimizer: torch.optim.Optimizer, steps_per_epoch: int, batch_num_samples: int, grad_acc_steps: int, max_grad_norm: Optional[float], sequence_length: int, sampling_weights: Optional[Tuple[float]], sample_from_start: bool, **kwargs_loss: Any) -> Dict[str, float]:
+    def train_component(self, component: nn.Module, optimizer: torch.optim.Optimizer, steps_per_epoch: int, batch_num_samples: int, grad_acc_steps: int, max_grad_norm: Optional[float], sequence_length: int, sampling_weights: Optional[Tuple[float]], sample_from_start: bool, agent_id, **kwargs_loss: Any) -> Dict[str, float]:
         loss_total_epoch = 0.0
         intermediate_losses = defaultdict(float)
 
-        for _ in tqdm(range(steps_per_epoch), desc=f"Training {str(component)}", file=sys.stdout):
+        for _ in tqdm(range(steps_per_epoch), desc=f"Training {str(component)} (AgentID : {agent_id})", file=sys.stdout):
             optimizer.zero_grad()
             for _ in range(grad_acc_steps):
-                batch = self.train_dataset.sample_batch(batch_num_samples, sequence_length, sampling_weights, sample_from_start)
+                batch = self.train_datasets[agent_id].sample_batch(batch_num_samples, sequence_length, sampling_weights, sample_from_start)
                 batch = self._to_device(batch)
 
                 losses = component.compute_loss(batch, **kwargs_loss) / grad_acc_steps
@@ -194,90 +224,96 @@ class Trainer:
 
             optimizer.step()
 
-        metrics = {f'{str(component)}/train/total_loss': loss_total_epoch, **intermediate_losses}
+        metrics = {f'{str(component)}/train/agent{agent_id}/total_loss': loss_total_epoch, **intermediate_losses}
         return metrics
 
     @torch.no_grad()
     def eval_agent(self, epoch: int) -> None:
-        self.agent.eval()
+        for agent in self.agents:
+            agent.eval()
 
-        metrics_tokenizer, metrics_world_model = {}, {}
+        for agent_id in range(self.agent_num):
+            metrics_tokenizer, metrics_world_model = {}, {}
 
-        cfg_tokenizer = self.cfg.evaluation_settings.tokenizer
-        cfg_world_model = self.cfg.evaluation_settings.world_model
-        cfg_actor_critic = self.cfg.evaluation_settings.actor_critic
+            cfg_tokenizer = self.cfg.evaluation_settings.tokenizer
+            cfg_world_model = self.cfg.evaluation_settings.world_model
+            cfg_actor_critic = self.cfg.evaluation_settings.actor_critic
 
-        if epoch > cfg_tokenizer.start_after_epochs:
-            metrics_tokenizer = self.eval_component(self.agent.tokenizer, cfg_tokenizer.batch_num_samples, sequence_length=1)
+            if epoch > cfg_tokenizer.start_after_epochs:
+                metrics_tokenizer = self.eval_component(self.agents[agent_id].tokenizer, cfg_tokenizer.batch_num_samples, sequence_length=1, agent_id=agent_id)
 
-        if epoch > cfg_world_model.start_after_epochs:
-            metrics_world_model = self.eval_component(self.agent.world_model, cfg_world_model.batch_num_samples, sequence_length=self.cfg.common.sequence_length, tokenizer=self.agent.tokenizer)
+            if epoch > cfg_world_model.start_after_epochs:
+                metrics_world_model = self.eval_component(self.agents[agent_id].world_model, cfg_world_model.batch_num_samples, sequence_length=self.cfg.common.sequence_length, tokenizer=self.agents[agent_id].tokenizer, agent_id=agent_id)
 
-        if epoch > cfg_actor_critic.start_after_epochs:
-            self.inspect_imagination(epoch)
+            if epoch > cfg_actor_critic.start_after_epochs:
+                self.inspect_imagination(epoch)
 
-        if cfg_tokenizer.save_reconstructions:
-            batch = self._to_device(self.test_dataset.sample_batch(batch_num_samples=3, sequence_length=self.cfg.common.sequence_length))
-            make_reconstructions_from_batch(batch, save_dir=self.reconstructions_dir, epoch=epoch, tokenizer=self.agent.tokenizer)
+            if cfg_tokenizer.save_reconstructions:
+                batch = self._to_device(self.test_datasets[agent_id].sample_batch(batch_num_samples=3, sequence_length=self.cfg.common.sequence_length))
+                make_reconstructions_from_batch(batch, save_dir=self.reconstructions_dir, epoch=epoch, tokenizer=self.agents[agent_id].tokenizer)
 
         return [metrics_tokenizer, metrics_world_model]
 
     @torch.no_grad()
-    def eval_component(self, component: nn.Module, batch_num_samples: int, sequence_length: int, **kwargs_loss: Any) -> Dict[str, float]:
+    def eval_component(self, component: nn.Module, batch_num_samples: int, sequence_length: int, agent_id, **kwargs_loss: Any) -> Dict[str, float]:
         loss_total_epoch = 0.0
         intermediate_losses = defaultdict(float)
 
         steps = 0
         pbar = tqdm(desc=f"Evaluating {str(component)}", file=sys.stdout)
-        for batch in self.test_dataset.traverse(batch_num_samples, sequence_length):
+        for batch in self.test_datasets[agent_id].traverse(batch_num_samples, sequence_length):
             batch = self._to_device(batch)
 
             losses = component.compute_loss(batch, **kwargs_loss)
             loss_total_epoch += losses.loss_total.item()
 
             for loss_name, loss_value in losses.intermediate_losses.items():
-                intermediate_losses[f"{str(component)}/eval/{loss_name}"] += loss_value
+                intermediate_losses[f"{str(component)}/eval/agent{agent_id}/{loss_name}"] += loss_value
 
             steps += 1
             pbar.update(1)
 
         intermediate_losses = {k: v / steps for k, v in intermediate_losses.items()}
-        metrics = {f'{str(component)}/eval/total_loss': loss_total_epoch / steps, **intermediate_losses}
+        metrics = {f'{str(component)}/eval/agent{agent_id}/total_loss': loss_total_epoch / steps, **intermediate_losses}
         return metrics
 
     @torch.no_grad()
     def inspect_imagination(self, epoch: int) -> None:
         mode_str = 'imagination'
-        batch = self.test_dataset.sample_batch(batch_num_samples=self.episode_manager_imagination.max_num_episodes, sequence_length=1 + self.cfg.training_settings.actor_critic.burn_in, sample_from_start=False)
-        outputs = self.agent.actor_critic.imagine(self._to_device(batch), self.agent.tokenizer, self.agent.world_model, horizon=self.cfg.evaluation_settings.actor_critic.horizon, show_pbar=True)
+        for agent_id in range(self.agent_num):
+            batch = self.test_datasets[agent_id].sample_batch(batch_num_samples=self.episode_managers_imagination[agent_id].max_num_episodes, sequence_length=1 + self.cfg.training_settings.actor_critic.burn_in, sample_from_start=False)
+            outputs = self.agents[agent_id].actor_critic.imagine(self._to_device(batch), self.agents[agent_id].tokenizer, self.agents[agent_id].world_model, horizon=self.cfg.evaluation_settings.actor_critic.horizon, show_pbar=True)
 
-        to_log = []
-        for i, (o, a, r, d) in enumerate(zip(outputs.observations.cpu(), outputs.actions.cpu(), outputs.rewards.cpu(), outputs.ends.long().cpu())):  # Make everything (N, T, ...) instead of (T, N, ...)
-            episode = Episode(o, a, r, d, torch.ones_like(d))
-            episode_id = (epoch - 1 - self.cfg.training_settings.actor_critic.start_after_epochs) * outputs.observations.size(0) + i
-            self.episode_manager_imagination.save(episode, episode_id, epoch)
+            to_log = []
+            for i, (o, a, r, d) in enumerate(zip(outputs.observations.cpu(), outputs.actions.cpu(), outputs.rewards.cpu(), outputs.ends.long().cpu())):  # Make everything (N, T, ...) instead of (T, N, ...)
+                episode = Episode(o, a, r, d, torch.ones_like(d))
+                episode_id = (epoch - 1 - self.cfg.training_settings.actor_critic.start_after_epochs) * outputs.observations.size(0) + i
+                self.episode_manager_imagination.save(episode, episode_id, epoch)
 
-            metrics_episode = {k: v for k, v in episode.compute_metrics().__dict__.items()}
-            metrics_episode['episode_num'] = episode_id
-            metrics_episode['action_histogram'] = wandb.Histogram(episode.actions.numpy(), num_bins=self.agent.world_model.act_vocab_size)
-            to_log.append({f'{mode_str}/{k}': v for k, v in metrics_episode.items()})
+                metrics_episode = {k: v for k, v in episode.compute_metrics().__dict__.items()}
+                metrics_episode['episode_num'] = episode_id
+                metrics_episode['action_histogram'] = wandb.Histogram(episode.actions.numpy(), num_bins=self.agents[agent_id].world_model.act_vocab_size)
+                to_log.append({f'{mode_str}/agent{agent_id}/{k}': v for k, v in metrics_episode.items()})
 
         return to_log
 
     def _save_checkpoint(self, epoch: int, save_agent_only: bool) -> None:
-        torch.save(self.agent.state_dict(), self.ckpt_dir / 'last.pt')
-        if not save_agent_only:
-            torch.save(epoch, self.ckpt_dir / 'epoch.pt')
-            torch.save({
-                "optimizer_tokenizer": self.optimizer_tokenizer.state_dict(),
-                "optimizer_world_model": self.optimizer_world_model.state_dict(),
-                "optimizer_actor_critic": self.optimizer_actor_critic.state_dict(),
-            }, self.ckpt_dir / 'optimizer.pt')
-            ckpt_dataset_dir = self.ckpt_dir / 'dataset'
-            ckpt_dataset_dir.mkdir(exist_ok=True, parents=False)
-            self.train_dataset.update_disk_checkpoint(ckpt_dataset_dir)
-            if self.cfg.evaluation_settings.should:
-                torch.save(self.test_dataset.num_seen_episodes, self.ckpt_dir / 'num_seen_episodes_test_dataset.pt')
+        torch.save(epoch, self.ckpt_dir / 'epoch.pt')
+
+        for agent_id, agent in enumerate(self.agents):
+            path = self.ckpt_dir / f'agent{agent_id}'
+            torch.save(agent.state_dict(), path / 'last.pt')
+            if not save_agent_only:
+                torch.save({
+                    "optimizer_tokenizer": self.optimizers_tokenizer[agent_id].state_dict(),
+                    "optimizer_world_model": self.optimizers_world_model[agent_id].state_dict(),
+                    "optimizer_actor_critic": self.optimizers_actor_critic[agent_id].state_dict(),
+                }, path / 'optimizer.pt')
+                ckpt_dataset_dir = path / 'dataset'
+                ckpt_dataset_dir.mkdir(exist_ok=True, parents=False)
+                self.train_datasets[agent_id].update_disk_checkpoint(ckpt_dataset_dir)
+                if self.cfg.evaluation_settings.should:
+                    torch.save(self.test_datasets[agent_id].num_seen_episodes, self.ckpt_dir / 'num_seen_episodes_test_dataset.pt')
 
     def save_checkpoint(self, epoch: int, save_agent_only: bool) -> None:
         tmp_checkpoint_dir = Path('checkpoints_tmp')
@@ -288,15 +324,16 @@ class Trainer:
     def load_checkpoint(self) -> None:
         assert self.ckpt_dir.is_dir()
         self.start_epoch = torch.load(self.ckpt_dir / 'epoch.pt') + 1
-        self.agent.load(self.ckpt_dir / 'last.pt', device=self.device)
-        ckpt_opt = torch.load(self.ckpt_dir / 'optimizer.pt', map_location=self.device)
-        self.optimizer_tokenizer.load_state_dict(ckpt_opt['optimizer_tokenizer'])
-        self.optimizer_world_model.load_state_dict(ckpt_opt['optimizer_world_model'])
-        self.optimizer_actor_critic.load_state_dict(ckpt_opt['optimizer_actor_critic'])
-        self.train_dataset.load_disk_checkpoint(self.ckpt_dir / 'dataset')
-        if self.cfg.evaluation_settings.should:
-            self.test_dataset.num_seen_episodes = torch.load(self.ckpt_dir / 'num_seen_episodes_test_dataset.pt')
-        print(f'Successfully loaded model, optimizer and {len(self.train_dataset)} episodes from {self.ckpt_dir.absolute()}.')
+        for agent_id in range(self.agent_num):
+            self.agents[agent_id].load(self.ckpt_dir / f'agent{agent_id}' / 'last.pt', device=self.device)
+            ckpt_opt = torch.load(self.ckpt_dir / f'agent{agent_id}' / 'optimizer.pt', map_location=self.device)
+            self.optimizers_tokenizer[agent_id].load_state_dict(ckpt_opt['optimizer_tokenizer'])
+            self.optimizers_world_model[agent_id].load_state_dict(ckpt_opt['optimizer_world_model'])
+            self.optimizers_actor_critic[agent_id].load_state_dict(ckpt_opt['optimizer_actor_critic'])
+            self.train_datasets[agent_id].load_disk_checkpoint(self.ckpt_dir / f'agent{agent_id}' / 'dataset')
+            if self.cfg.evaluation_settings.should:
+                self.test_datasets[agent_id].num_seen_episodes = torch.load(self.ckpt_dir / f'agent{agent_id}' / 'num_seen_episodes_test_dataset.pt')
+            print(f'Successfully loaded model, optimizer and {len(self.train_datasets[agent_id])} episodes from {self.ckpt_dir.absolute()}.(Agent Id : {agent_id})')
 
     def _to_device(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         return {k: batch[k].to(self.device) for k in batch}

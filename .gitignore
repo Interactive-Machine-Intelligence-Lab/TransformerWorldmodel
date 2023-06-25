@@ -2,8 +2,7 @@ wandb
 __pycache__
 media
 checkpoints
-test.ipynb
 real
 output*
 .DS_Store
-envs
+envs/pushblock
