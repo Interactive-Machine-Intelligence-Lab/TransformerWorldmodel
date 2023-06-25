@@ -313,7 +313,7 @@ class Trainer:
                 ckpt_dataset_dir.mkdir(exist_ok=True, parents=False)
                 self.train_datasets[agent_id].update_disk_checkpoint(ckpt_dataset_dir)
                 if self.cfg.evaluation_settings.should:
-                    torch.save(self.test_datasets[agent_id].num_seen_episodes, self.ckpt_dir / 'num_seen_episodes_test_dataset.pt')
+                    torch.save(self.test_datasets[agent_id].num_seen_episodes, self.ckpt_dir / f'agent{agent_id}' / 'num_seen_episodes_test_dataset.pt')
 
     def save_checkpoint(self, epoch: int, save_agent_only: bool) -> None:
         tmp_checkpoint_dir = Path('checkpoints_tmp')
