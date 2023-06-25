@@ -1,7 +1,7 @@
 {
 	"wandb": {
-		"mode": "disabled",
-		"project": "iris",
+		"mode": "online",
+		"project": "iris-multiagent",
 		"entity": null,
 		"name": null,
 		"group": null,
@@ -10,7 +10,7 @@
 	},
 	"common": {
 		"epochs": 600,
-		"device": "mps",
+		"device": "cuda:0",
 		"do_checkpoint": true,
 		"seed": 100,
 		"sequence_length": 20,
@@ -26,7 +26,7 @@
 			"epsilon": 0.01,
 			"should_sample": true,
 			"temperature": 1.0,
-			"num_steps": 10,
+			"num_steps": 999,
 			"burn_in": 20
 		}
 	},
