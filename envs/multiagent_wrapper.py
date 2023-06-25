@@ -228,6 +228,7 @@ class MultiUnityWrapper(gym.Env):
         obs_dict, reward_dict, done_dict = {}, {}, {}
         vec_obs_size = self._get_vec_obs_size()
         n_vis_obs = self._get_n_vis_obs()
+        
 
         for behaviour_name, info in info_dict.items():
             default_observation = None
@@ -243,13 +244,15 @@ class MultiUnityWrapper(gym.Env):
             else:
                 if n_vis_obs[behaviour_name] >= 1:
                     visual_obs = self._get_vis_obs_list(info)
-                    default_observation = self._preprocess_single(visual_obs[0][0])
+                    for agent_id in info.agent_id:
+                        default_observation = self._preprocess_single(visual_obs[0][agent_id])
+                        obs_dict[agent_id] = default_observation
                 else:
                     obs_dict.update(self._get_vector_obs(info))
 
             if n_vis_obs[behaviour_name] >= 1:
                 visual_obs = self._get_vis_obs_list(info)
-                self.visual_obs = self._preprocess_single(visual_obs[0][0])
+                self.visual_obs = self._preprocess_single(visual_obs[0])
 
             done = isinstance(info, TerminalSteps)
             for agent_id in info.agent_id:
@@ -257,9 +260,6 @@ class MultiUnityWrapper(gym.Env):
                 agent_index = info.agent_id_to_index[agent_id]
                 reward_dict[agent_id] = info.reward[agent_index]
                 done_dict[agent_id] = done
-                if default_observation is not None:
-                    obs_dict[agent_id] = default_observation
-
         return (obs_dict, reward_dict, done_dict, info)
 
     def _preprocess_single(self, single_visual_obs: np.ndarray) -> np.ndarray:
