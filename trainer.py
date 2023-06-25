@@ -141,7 +141,7 @@ class Trainer:
             self.optimizers_world_model.append(optimizer_world_model)
             self.optimizers_actor_critic.append(optimizer_actor_critic)
             if train_cfg.common.resume:
-                self.load_checkpoint(agent_id)
+                self.load_checkpoint()
 
     def run(self) -> None:
 
