@@ -172,6 +172,13 @@ class MultiUnityWrapper(gym.Env):
             info (dict): contains auxiliary diagnostic information.
         """
 
+        if self.game_over:
+            raise MultiUnityWrapperException(
+                "You are calling 'step()' even though this environment has already "
+                "returned done = True. You must always call 'reset()' once you "
+                "receive 'done = True'."
+            )
+
         for agent_id, action in action_dict.items():
             behaviour_name = self._agent_id_to_behaviour_name[agent_id]
             action = np.array(action).reshape((1, 1))
@@ -190,19 +197,23 @@ class MultiUnityWrapper(gym.Env):
 
         self._check_agents(
             max(len(decision_steps_dict), len(terminal_steps_dict)))
-
-        decision_obs_dict, decision_reward_dict, decision_done_dict, decision_info = self._single_step(
-            decision_steps_dict)
+        
+        terminal_obs_dict, terminal_reward_dict, terminal_done_dict, terminal_info = {}, {}, {}, {}
+        decision_obs_dict, decision_reward_dict, decision_done_dict, decision_info = {}, {}, {}, {}
         if len(terminal_step) != 0:
             # At least one agent is done
-            _terminal_obs_dict, terminal_reward_dict, terminal_done_dict, terminal_info = self._single_step(
-                terminal_steps_dict)
+            self.game_over = True
+            terminal_obs_dict, terminal_reward_dict, terminal_done_dict, terminal_info = self._single_step(terminal_steps_dict)
         else:
+            decision_obs_dict, decision_reward_dict, decision_done_dict, decision_info = self._single_step(decision_steps_dict)
             terminal_reward_dict, terminal_done_dict, terminal_info = {}, {}, {}
 
         # Create MultiStepResult dicts
         # Episode is done: no terminal_obs
-        obs_dict = decision_obs_dict
+        if len(terminal_step) != 0:
+            obs_dict = terminal_obs_dict
+        else:
+            obs_dict = decision_obs_dict
         reward_dict = {**decision_reward_dict, **terminal_reward_dict}
         done_dict = {**decision_done_dict, **terminal_done_dict}
         info_dict = {"decision_step": decision_info,
@@ -232,11 +243,9 @@ class MultiUnityWrapper(gym.Env):
             else:
                 if n_vis_obs[behaviour_name] >= 1:
                     visual_obs = self._get_vis_obs_list(info)
-                    default_observation = self._preprocess_single(
-                        visual_obs[0][0])
+                    default_observation = self._preprocess_single(visual_obs[0][0])
                 else:
-                    obs_dict.update(self._get_vector_obs(
-                        info))
+                    obs_dict.update(self._get_vector_obs(info))
 
             if n_vis_obs[behaviour_name] >= 1:
                 visual_obs = self._get_vis_obs_list(info)

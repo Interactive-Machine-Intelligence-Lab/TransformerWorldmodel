@@ -26,13 +26,13 @@
 			"epsilon": 0.01,
 			"should_sample": true,
 			"temperature": 1.0,
-			"num_steps": 999,
+			"num_steps": 1000,
 			"burn_in": 20
 		}
 	},
 	"collector_test": {
 		"num_env": 1,
-		"pid": [],
+		"pid": [200],
 		"num_episodes_to_save": 10,
 		"config": {
 			"epsilon": 0.0,
@@ -65,7 +65,7 @@
 			"batch_num_samples": 64,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
-			"start_after_epochs": 50,
+			"start_after_epochs": 70,
 			"steps_per_epoch": 200,
 			"imagine_horizon": 20,
 			"burn_in": 20,
@@ -75,7 +75,7 @@
 		}
 	},
 	"evaluation_settings": {
-		"should": false,
+		"should": true,
 		"every": 5,
 		"tokenizer": {
 			"batch_num_samples": 256,
@@ -89,7 +89,7 @@
 		"actor_critic": {
 			"num_episodes_to_save": 64,
 			"horizon": 20,
-			"start_after_epochs": 50
+			"start_after_epochs": 70
 		}
 	}
 }
