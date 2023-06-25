@@ -5,7 +5,7 @@ import torch
 
 
 @torch.no_grad()
-def make_reconstructions_from_batch(batch, save_dir, epoch, tokenizer):
+def make_reconstructions_from_batch(batch, save_dir, epoch, tokenizer, agent_id):
     check_batch(batch)
 
     original_frames = tensor_to_np_frames(rearrange(batch['observations'], 'b t c h w -> b t h w c'))
@@ -15,7 +15,7 @@ def make_reconstructions_from_batch(batch, save_dir, epoch, tokenizer):
     all.append(rec_frames)
 
     for i, image in enumerate(map(Image.fromarray, np.concatenate(list(np.concatenate((original_frames, rec_frames), axis=-2)), axis=-3))):
-        image.save(save_dir / f'epoch_{epoch:03d}_t_{i:03d}.png')
+        image.save(save_dir / f'agent{agent_id}' / f'epoch_{epoch:03d}_t_{i:03d}.png')
 
     return
 

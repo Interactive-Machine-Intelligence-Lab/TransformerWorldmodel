@@ -250,7 +250,7 @@ class Trainer:
 
             if cfg_tokenizer.save_reconstructions:
                 batch = self._to_device(self.test_datasets[agent_id].sample_batch(batch_num_samples=3, sequence_length=self.cfg.common.sequence_length))
-                make_reconstructions_from_batch(batch, save_dir=self.reconstructions_dir, epoch=epoch, tokenizer=self.agents[agent_id].tokenizer)
+                make_reconstructions_from_batch(batch, save_dir=self.reconstructions_dir, epoch=epoch, tokenizer=self.agents[agent_id].tokenizer, agent_id=agent_id)
 
         return [metrics_tokenizer, metrics_world_model]
 
