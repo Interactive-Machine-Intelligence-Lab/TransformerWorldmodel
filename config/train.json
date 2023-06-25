@@ -1,7 +1,7 @@
 {
 	"wandb": {
 		"mode": "online",
-		"project": "iris-multiagent",
+		"project": "iris-multiagent-test",
 		"entity": null,
 		"name": null,
 		"group": null,
@@ -26,7 +26,7 @@
 			"epsilon": 0.01,
 			"should_sample": true,
 			"temperature": 1.0,
-			"num_steps": 1000,
+			"num_steps": 10,
 			"burn_in": 20
 		}
 	},
@@ -51,7 +51,7 @@
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
 			"start_after_epochs": 5,
-			"steps_per_epoch": 200
+			"steps_per_epoch": 10
 		},
 		"world_model": {
 			"batch_num_samples": 64,
@@ -59,14 +59,14 @@
 			"max_grad_norm": 10.0,
 			"weight_decay": 0.01,
 			"start_after_epochs": 25,
-			"steps_per_epoch": 200
+			"steps_per_epoch": 10
 		},
 		"actor_critic": {
 			"batch_num_samples": 64,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
 			"start_after_epochs": 70,
-			"steps_per_epoch": 200,
+			"steps_per_epoch": 10,
 			"imagine_horizon": 20,
 			"burn_in": 20,
 			"gamma": 0.995,

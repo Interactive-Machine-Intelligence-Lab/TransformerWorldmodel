@@ -288,7 +288,7 @@ class Trainer:
             for i, (o, a, r, d) in enumerate(zip(outputs.observations.cpu(), outputs.actions.cpu(), outputs.rewards.cpu(), outputs.ends.long().cpu())):  # Make everything (N, T, ...) instead of (T, N, ...)
                 episode = Episode(o, a, r, d, torch.ones_like(d))
                 episode_id = (epoch - 1 - self.cfg.training_settings.actor_critic.start_after_epochs) * outputs.observations.size(0) + i
-                self.episode_manager_imagination.save(episode, episode_id, epoch)
+                self.episode_managers_imagination[agent_id].save(episode, episode_id, epoch)
 
                 metrics_episode = {k: v for k, v in episode.compute_metrics().__dict__.items()}
                 metrics_episode['episode_num'] = episode_id

@@ -3,7 +3,7 @@ from mlagents_envs.environment import UnityEnvironment
 from .multiagent_wrapper import MultiUnityWrapper
 from mlagents_envs.envs.unity_gym_env import UnityToGymWrapper
 
-def make_unity_gym(pid=0, size=64, path='envs/pushblock/mac_build.app'):
+def make_unity_gym(pid=0, size=64, path='envs/pushblock/UnityEnvironment.exe'):
     worker_id = pid
     print('Making Workder Id :', worker_id)
     env = UnityEnvironment(path, worker_id=worker_id)
