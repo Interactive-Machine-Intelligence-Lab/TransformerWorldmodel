@@ -96,7 +96,7 @@ class Collector:
                         metrics_episode = {k: v for k, v in episode.compute_metrics().__dict__.items()}
                         metrics_episode['episode_num'] = episode_id
                         metrics_episode['action_histogram'] = wandb.Histogram(np_histogram=np.histogram(episode.actions.numpy(), bins=np.arange(0, self.env.num_actions + 1) - 0.5, density=True))
-                        to_log.append({f'{self.datasets[agent_id].name}/agent{agent_id}/{k}': v for k, v in metrics_episode.items()})
+                        to_log.append({f'agent{agent_id}/{self.datasets[agent_id].name}/{k}': v for k, v in metrics_episode.items()})
                         returns.append(metrics_episode['episode_return'])
 
                 self.obs = self.env.reset()
@@ -124,7 +124,7 @@ class Collector:
             }
             if len(returns) > 0:
                 metrics_collect['return'] = np.mean(returns)
-            metrics_collect = {f'{self.datasets[agent_id].name}/{k}/agent{agent_id}': v for k, v in metrics_collect.items()}
+            metrics_collect = {f'agent{agent_id}/{self.datasets[agent_id].name}/{k}': v for k, v in metrics_collect.items()}
             to_log.append(metrics_collect)
 
         return to_log
