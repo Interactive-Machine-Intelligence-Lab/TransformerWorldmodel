@@ -141,7 +141,7 @@ class Trainer:
             self.optimizers_world_model.append(optimizer_world_model)
             self.optimizers_actor_critic.append(optimizer_actor_critic)
             if train_cfg.common.resume:
-                self.load_checkpoint()
+                self.load_checkpoint(agent_id)
 
     def run(self) -> None:
 
@@ -321,19 +321,18 @@ class Trainer:
         self._save_checkpoint(epoch, save_agent_only)
         shutil.rmtree(tmp_checkpoint_dir)
 
-    def load_checkpoint(self) -> None:
+    def load_checkpoint(self, agent_id) -> None:
         assert self.ckpt_dir.is_dir()
         self.start_epoch = torch.load(self.ckpt_dir / 'epoch.pt') + 1
-        for agent_id in range(self.agent_num):
-            self.agents[agent_id].load(self.ckpt_dir / f'agent{agent_id}' / 'last.pt', device=self.device)
-            ckpt_opt = torch.load(self.ckpt_dir / f'agent{agent_id}' / 'optimizer.pt', map_location=self.device)
-            self.optimizers_tokenizer[agent_id].load_state_dict(ckpt_opt['optimizer_tokenizer'])
-            self.optimizers_world_model[agent_id].load_state_dict(ckpt_opt['optimizer_world_model'])
-            self.optimizers_actor_critic[agent_id].load_state_dict(ckpt_opt['optimizer_actor_critic'])
-            self.train_datasets[agent_id].load_disk_checkpoint(self.ckpt_dir / f'agent{agent_id}' / 'dataset')
-            if self.cfg.evaluation_settings.should:
-                self.test_datasets[agent_id].num_seen_episodes = torch.load(self.ckpt_dir / f'agent{agent_id}' / 'num_seen_episodes_test_dataset.pt')
-            print(f'Successfully loaded model, optimizer and {len(self.train_datasets[agent_id])} episodes from {self.ckpt_dir.absolute()}.(Agent Id : {agent_id})')
+        self.agents[agent_id].load(self.ckpt_dir / f'agent{agent_id}' / 'last.pt', device=self.device)
+        ckpt_opt = torch.load(self.ckpt_dir / f'agent{agent_id}' / 'optimizer.pt', map_location=self.device)
+        self.optimizers_tokenizer[agent_id].load_state_dict(ckpt_opt['optimizer_tokenizer'])
+        self.optimizers_world_model[agent_id].load_state_dict(ckpt_opt['optimizer_world_model'])
+        self.optimizers_actor_critic[agent_id].load_state_dict(ckpt_opt['optimizer_actor_critic'])
+        self.train_datasets[agent_id].load_disk_checkpoint(self.ckpt_dir / f'agent{agent_id}' / 'dataset')
+        if self.cfg.evaluation_settings.should:
+            self.test_datasets[agent_id].num_seen_episodes = torch.load(self.ckpt_dir / f'agent{agent_id}' / 'num_seen_episodes_test_dataset.pt')
+        print(f'Successfully loaded model, optimizer and {len(self.train_datasets[agent_id])} episodes from {self.ckpt_dir.absolute()}.(Agent Id : {agent_id})')
 
     def _to_device(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         return {k: batch[k].to(self.device) for k in batch}
