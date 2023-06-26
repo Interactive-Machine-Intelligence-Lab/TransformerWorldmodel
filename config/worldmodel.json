@@ -2,9 +2,9 @@
     "tokens_per_block": 17,
     "max_blocks": 20,
     "attention": "causal",
-    "num_layers": 10,
-    "num_heads": 4,
-    "embed_dim": 256,
+    "num_layers": 24,
+    "num_heads": 32,
+    "embed_dim": 512,
     "embed_pdrop": 0.1,
     "resid_pdrop": 0.1,
     "attn_pdrop": 0.1

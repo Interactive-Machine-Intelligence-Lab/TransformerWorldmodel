@@ -217,7 +217,7 @@ class Trainer:
                 loss_total_epoch += loss_total_step.item() / steps_per_epoch
 
                 for loss_name, loss_value in losses.intermediate_losses.items():
-                    intermediate_losses[f"{str(component)}/train/{loss_name}"] += loss_value / steps_per_epoch
+                    intermediate_losses[f"agent{agent_id}/{str(component)}/train/{loss_name}"] += loss_value / steps_per_epoch
 
             if max_grad_norm is not None:
                 torch.nn.utils.clip_grad_norm_(component.parameters(), max_grad_norm)

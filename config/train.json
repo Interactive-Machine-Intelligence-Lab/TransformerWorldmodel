@@ -1,7 +1,7 @@
 {
 	"wandb": {
 		"mode": "online",
-		"project": "iris-multiagent-test",
+		"project": "iris-multiagent",
 		"entity": null,
 		"name": null,
 		"group": null,
@@ -26,7 +26,7 @@
 			"epsilon": 0.01,
 			"should_sample": true,
 			"temperature": 1.0,
-			"num_steps": 10,
+			"num_steps": 1000,
 			"burn_in": 20
 		}
 	},
