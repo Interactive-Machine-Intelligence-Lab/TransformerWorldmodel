@@ -224,7 +224,7 @@ class Trainer:
 
             optimizer.step()
 
-        metrics = {f'{str(component)}/train/agent{agent_id}/total_loss': loss_total_epoch, **intermediate_losses}
+        metrics = {f'agent{agent_id}/{str(component)}/train/total_loss': loss_total_epoch, **intermediate_losses}
         return metrics
 
     @torch.no_grad()
@@ -268,13 +268,13 @@ class Trainer:
             loss_total_epoch += losses.loss_total.item()
 
             for loss_name, loss_value in losses.intermediate_losses.items():
-                intermediate_losses[f"{str(component)}/eval/agent{agent_id}/{loss_name}"] += loss_value
+                intermediate_losses[f"agent{agent_id}/{str(component)}/eval/{loss_name}"] += loss_value
 
             steps += 1
             pbar.update(1)
 
         intermediate_losses = {k: v / steps for k, v in intermediate_losses.items()}
-        metrics = {f'{str(component)}/eval/agent{agent_id}/total_loss': loss_total_epoch / steps, **intermediate_losses}
+        metrics = {f'agent{agent_id}/{str(component)}/eval/total_loss': loss_total_epoch / steps, **intermediate_losses}
         return metrics
 
     @torch.no_grad()
@@ -293,7 +293,7 @@ class Trainer:
                 metrics_episode = {k: v for k, v in episode.compute_metrics().__dict__.items()}
                 metrics_episode['episode_num'] = episode_id
                 metrics_episode['action_histogram'] = wandb.Histogram(episode.actions.numpy(), num_bins=self.agents[agent_id].world_model.act_vocab_size)
-                to_log.append({f'{mode_str}/agent{agent_id}/{k}': v for k, v in metrics_episode.items()})
+                to_log.append({f'agent{agent_id}/{mode_str}/{k}': v for k, v in metrics_episode.items()})
 
         return to_log
 
