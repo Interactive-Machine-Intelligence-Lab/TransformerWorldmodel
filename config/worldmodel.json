@@ -1,6 +1,6 @@
 {
     "tokens_per_block": 17,
-    "max_blocks": 20,
+    "max_blocks": 30,
     "attention": "causal",
     "num_layers": 24,
     "num_heads": 32,

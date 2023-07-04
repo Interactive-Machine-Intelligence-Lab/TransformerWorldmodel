@@ -7,12 +7,13 @@ from torchvision.transforms.functional import InterpolationMode, resize
 from agent import Agent
 from envs import SingleProcessEnv, WorldModelEnv
 from game.keymap import get_keymap_and_action_names
+from typing import List
 
 
 class AgentEnv:
-    def __init__(self, agent: Agent, env: SingleProcessEnv, do_reconstruction: bool) -> None:
+    def __init__(self, agents: List[Agent], env: SingleProcessEnv, do_reconstruction: bool) -> None:
         assert isinstance(env, SingleProcessEnv) or isinstance(env, WorldModelEnv)
-        self.agent = agent
+        self.agents = agents
         self.env = env
         _, self.action_names = get_keymap_and_action_names()
         self.do_reconstruction = do_reconstruction
@@ -37,9 +38,15 @@ class AgentEnv:
         return obs
 
     def step(self, *args, **kwargs) -> torch.FloatTensor:
+        actions = {}
         with torch.no_grad():
-            act = self.agent.act(self.obs, should_sample=True).cpu().numpy()
-        obs, reward, done, _ = self.env.step(act)
+            for agent_id, agent in enumerate(self.agents):
+                act = agent.act(self.obs[agent_id], should_sample=True).cpu().numpy()
+                actions[agent_id] = act[0]
+        obs, reward, done, _ = self.env.step(actions)
+
+        for agnet_obs in obs:
+            agnet_obs = self._to_tensor(agnet_obs)
         self.obs = self._to_tensor(obs) if isinstance(self.env, SingleProcessEnv) else obs
         self._t += 1
         self._return += reward[0]

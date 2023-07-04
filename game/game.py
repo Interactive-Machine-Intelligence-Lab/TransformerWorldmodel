@@ -117,7 +117,7 @@ class Game:
 
             obs, reward, done, info = self.env.step(action)
 
-
+            
             if self.record_mode:
                 self.observations.append(np.array([obs]))
                 self.rewards.append(reward)

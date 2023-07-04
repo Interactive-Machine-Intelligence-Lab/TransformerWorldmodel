@@ -1,10 +1,11 @@
 {
     "do_reconstruction" : true,
-    "mode" : 4,
-    "header" : 0,
+    "mode" : 5,
+    "header" : 1,
     "fps" : 15,
-    "save_mode" : true,
-    "agent_checkpoint_path" : "output300/checkpoints/last.pt",
-    "replay_path" : "output300/media/episodes",
-    "replay_device" : "cpu"
+    "save_mode" : false,
+    "agent_id" : 1,
+    "agent_checkpoint_path" : "output/2023-06-25_18-36-09/checkpoints",
+    "replay_path" : "output/2023-06-25_18-36-09/media/episodes",
+    "replay_device" : "cuda:0"
 }

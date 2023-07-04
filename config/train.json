@@ -1,6 +1,6 @@
 {
 	"wandb": {
-		"mode": "online",
+		"mode": "disabled",
 		"project": "iris-multiagent",
 		"entity": null,
 		"name": null,
@@ -9,13 +9,13 @@
 		"notes": null
 	},
 	"common": {
-		"epochs": 600,
+		"epochs": 200,
 		"device": "cuda:0",
 		"do_checkpoint": true,
-		"seed": 100,
-		"sequence_length": 20,
+		"seed": 300,
+		"sequence_length": 30,
 		"resume": false,
-		"resume_path": "output/2023-05-20_18-51-44"
+		"resume_path": "output/2023-07-04_00-10-17"
 	},
 	"collector_train": {
 		"num_env": 1,
@@ -26,7 +26,7 @@
 			"epsilon": 0.01,
 			"should_sample": true,
 			"temperature": 1.0,
-			"num_steps": 1000,
+			"num_steps": 500,
 			"burn_in": 20
 		}
 	},
@@ -38,7 +38,7 @@
 			"epsilon": 0.0,
 			"should_sample": true,
 			"temperature": 0.5,
-			"num_episodes": 1,
+			"num_episodes": 6,
 			"burn_in": 20
 		}
 	},
@@ -54,7 +54,7 @@
 			"steps_per_epoch": 200
 		},
 		"world_model": {
-			"batch_num_samples": 64,
+			"batch_num_samples": 32,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
 			"weight_decay": 0.01,
@@ -62,12 +62,12 @@
 			"steps_per_epoch": 200
 		},
 		"actor_critic": {
-			"batch_num_samples": 64,
+			"batch_num_samples": 32,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
 			"start_after_epochs": 70,
 			"steps_per_epoch": 200,
-			"imagine_horizon": 20,
+			"imagine_horizon": 30,
 			"burn_in": 20,
 			"gamma": 0.995,
 			"lambda_": 0.95,
@@ -83,12 +83,12 @@
 			"save_reconstructions": true
 		},
 		"world_model": {
-			"batch_num_samples": 64,
+			"batch_num_samples": 32,
 			"start_after_epochs": 25
 		},
 		"actor_critic": {
-			"num_episodes_to_save": 64,
-			"horizon": 20,
+			"num_episodes_to_save": 32,
+			"horizon": 30,
 			"start_after_epochs": 70
 		}
 	}

@@ -71,7 +71,7 @@ class MultiAgentRewardWrapper(gym.Wrapper):
     def reward(self, reward):
         new_reward = []
         for rwd in reward:
-            new_reward.append(np.clip(rwd, -1, 1))
+            new_reward.append(np.clip(reward[rwd], -1, 1))
         return new_reward
     
 

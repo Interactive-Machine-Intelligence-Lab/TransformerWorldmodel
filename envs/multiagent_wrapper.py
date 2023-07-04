@@ -206,8 +206,8 @@ class MultiUnityWrapper(gym.Env):
             terminal_obs_dict, terminal_reward_dict, terminal_done_dict, terminal_info = self._single_step(terminal_steps_dict)
         else:
             decision_obs_dict, decision_reward_dict, decision_done_dict, decision_info = self._single_step(decision_steps_dict)
+            
             terminal_reward_dict, terminal_done_dict, terminal_info = {}, {}, {}
-
         # Create MultiStepResult dicts
         # Episode is done: no terminal_obs
         if len(terminal_step) != 0:
@@ -215,6 +215,7 @@ class MultiUnityWrapper(gym.Env):
         else:
             obs_dict = decision_obs_dict
         reward_dict = {**decision_reward_dict, **terminal_reward_dict}
+
         done_dict = {**decision_done_dict, **terminal_done_dict}
         info_dict = {"decision_step": decision_info,
                      "terminal_step": terminal_info}

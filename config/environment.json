@@ -1,1 +1,5 @@
-{"size": 64}
+{
+    "size": 64,
+    "env_path" : "envs/pushblock_w/UnityEnvironment.exe",
+    "agent_num" : 2
+}

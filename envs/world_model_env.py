@@ -11,16 +11,13 @@ import torchvision
 
 
 class WorldModelEnv:
-
-    def __init__(self, tokenizer: torch.nn.Module, world_model: torch.nn.Module, device: Union[str, torch.device], env: Optional[gym.Env] = None) -> None:
-
+    def __init__(self, agent_id, tokenizer: torch.nn.Module, world_model: torch.nn.Module, device: Union[str, torch.device], env: Optional[gym.Env] = None) -> None:
         self.device = torch.device(device)
         self.world_model = world_model.to(self.device).eval()
         self.tokenizer = tokenizer.to(self.device).eval()
-
         self.keys_values_wm, self.obs_tokens, self._num_observations_tokens = None, None, None
-
         self.env = env
+        self.agent_id = agent_id
 
     @property
     def num_observations_tokens(self) -> int:
@@ -29,7 +26,7 @@ class WorldModelEnv:
     @torch.no_grad()
     def reset(self) -> torch.FloatTensor:
         assert self.env is not None
-        obs = torchvision.transforms.functional.to_tensor(self.env.reset()).to(self.device).unsqueeze(0)  # (1, C, H, W) in [0., 1.]
+        obs = torchvision.transforms.functional.to_tensor(self.env.reset()[self.agent_id]).to(self.device).unsqueeze(0)  # (1, C, H, W) in [0., 1.]
         return self.reset_from_initial_observations(obs)
 
     @torch.no_grad()
@@ -72,12 +69,8 @@ class WorldModelEnv:
             output_sequence.append(outputs_wm.output_sequence)
 
             if k == 0:
-                # reward = Categorical(logits=outputs_wm.logits_rewards).sample().float().cpu().numpy().reshape(-1) - 1   # (B,)
-                # reward = outputs_wm.logits_rewards[0].sample().float().cpu().numpy() # (B,)
-                # reward = outputs_wm.logits_rewards[0].float().cpu().numpy() # (B,)
                 reward = outputs_wm.logits_rewards.float().cpu().numpy() # (B,)
                 done = Categorical(logits=outputs_wm.logits_ends).sample().cpu().numpy().astype(bool).reshape(-1)       # (B,)
-
             if k < self.num_observations_tokens:
                 token = Categorical(logits=outputs_wm.logits_observations).sample()
                 obs_tokens.append(token)

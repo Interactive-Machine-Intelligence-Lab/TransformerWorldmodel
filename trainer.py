@@ -55,7 +55,7 @@ class Trainer:
         self.device = torch.device(train_cfg.common.device)
         self.cfg = train_cfg
 
-        self.agent_num = 2
+        self.agent_num = env_cfg.agent_num
         self.agents = []
         self.optimizers_tokenizer = []
         self.optimizers_world_model = []

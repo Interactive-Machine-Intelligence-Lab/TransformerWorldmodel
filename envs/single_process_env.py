@@ -3,6 +3,7 @@ from typing import Any, Tuple, Dict
 import numpy as np
 
 from .done_tracker import DoneTrackerEnv
+from config import env_cfg
 
 
 class SingleProcessEnv(DoneTrackerEnv):
@@ -24,7 +25,7 @@ class SingleProcessEnv(DoneTrackerEnv):
     def step(self, action : Dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Any]:
         obs, reward, done, _ = self.env.step(action)  # action is supposed to be dict {0 : ?, 1 : ?}
         self.update_done_tracker(done['__all__'])
-        for agent_id in obs:
+        for agent_id in range(env_cfg.agent_num):
             obs[agent_id] = obs[agent_id][None, ...]
             reward[agent_id] = np.array([reward[agent_id]])
             done[agent_id] = np.array([done[agent_id]])
