@@ -1,9 +1,9 @@
 from trainer import Trainer
-# from pyvirtualdisplay.display import Display
+from pyvirtualdisplay.display import Display
 
 
 def main():
-    # with Display() as disp:
+    with Display() as disp:
         trainer = Trainer()
         trainer.run()
 

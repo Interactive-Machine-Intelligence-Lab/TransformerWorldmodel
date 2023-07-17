@@ -42,7 +42,13 @@ class Trainer:
     def __init__(self):
 
         wandb.init(
-            config=dict(train_cfg),
+            config=dict({
+                "train_cfg" : train_cfg,
+                "world_model_cfg" : worldmodel_cfg,
+                "tokenizer_cfg" : tok_cfg,
+                "env_cfg" : env_cfg,
+                "collector_cfg" : col_cfg    
+            }),
             reinit=True,
             resume=True,
             **train_cfg.wandb

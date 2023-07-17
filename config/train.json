@@ -1,7 +1,7 @@
 {
 	"wandb": {
-		"mode": "disabled",
-		"project": "iris-multiagent",
+		"mode": "offline",
+		"project": "iris-multiagent-new_env",
 		"entity": null,
 		"name": null,
 		"group": null,
@@ -10,7 +10,7 @@
 	},
 	"common": {
 		"epochs": 200,
-		"device": "cuda:0",
+		"device": "cuda:7",
 		"do_checkpoint": true,
 		"seed": 300,
 		"sequence_length": 30,

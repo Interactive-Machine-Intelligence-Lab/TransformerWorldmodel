@@ -1,7 +1,6 @@
 from envs.wrapper import MultiAgentResizeObsWrapper, MultiAgentRewardWrapper
 from mlagents_envs.environment import UnityEnvironment
 from .multiagent_wrapper import MultiUnityWrapper
-from mlagents_envs.envs.unity_gym_env import UnityToGymWrapper
 from config import *
 
 def make_unity_gym(pid=0, size=64):

@@ -1,5 +1,5 @@
 {
     "size": 64,
-    "env_path" : "envs/pushblock_w/UnityEnvironment.exe",
+    "env_path" : "envs/pushblock/Linux_build.x86_64",
     "agent_num" : 2
 }
