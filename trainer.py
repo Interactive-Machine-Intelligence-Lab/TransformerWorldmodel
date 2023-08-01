@@ -321,7 +321,7 @@ class Trainer:
 
         for agent_id, agent in enumerate(self.agents):
             path = self.ckpt_dir / f'agent{agent_id}'
-            torch.save(agent.state_dict(), path / 'last.pt')
+            torch.save(agent.world_model.state_dict(), path / 'last.pt')
             if not save_agent_only:
                 torch.save({
                     "optimizer_tokenizer": self.optimizers_tokenizer[agent_id].state_dict(),

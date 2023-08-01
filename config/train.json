@@ -1,6 +1,6 @@
 {
 	"wandb": {
-		"mode": "disabled",
+		"mode": "offline",
 		"project": "iris-multiagent-new_env",
 		"entity": null,
 		"name": null,
