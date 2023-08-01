@@ -113,7 +113,7 @@ class WorldModel(nn.Module):
 
     def compute_loss(self, batch: Batch, tokenizer: Tokenizer, **kwargs: Any) -> LossWithIntermediateLosses:
 
-        with torch.no_grad():
+        with torch.inference_mode():
             obs_tokens = tokenizer.encode(batch['observations'], should_preprocess=True).tokens  # (BL, K)
 
         act_tokens = rearrange(batch['actions'], 'b l -> b l 1')

@@ -140,7 +140,7 @@ class Trainer:
 
 
         agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
-        agent = torch.compile(agent)
+        # agent = torch.compile(agent)
 
         optimizer_tokenizer = torch.optim.Adam(agent.tokenizer.parameters(), lr=train_cfg.training_settings.learning_rate)
         optimizer_world_model = configure_optimizer(agent.world_model, train_cfg.training_settings.learning_rate, train_cfg.training_settings.world_model.weight_decay)

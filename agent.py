@@ -8,6 +8,8 @@ from models.actor_critic import ActorCritic
 from models.tokenizer import Tokenizer
 from models.world_model import WorldModel
 from utils import extract_state_dict
+import torch.nn.functional as F
+
 
 class Agent(nn.Module):
     def __init__(self, tokenizer: Tokenizer, world_model: WorldModel, actor_critic: ActorCritic):
@@ -30,6 +32,8 @@ class Agent(nn.Module):
             self.actor_critic.load_state_dict(extract_state_dict(agent_state_dict, 'actor_critic'))
 
     def act(self, obs: torch.FloatTensor, should_sample: bool = True, temperature: float = 1.0) -> torch.LongTensor:
+        obs = F.interpolate(obs, size=(64, 64))
+
         input_ac = obs if self.actor_critic.use_original_obs else torch.clamp(self.tokenizer.encode_decode(obs, should_preprocess=True, should_postprocess=True), 0, 1)
         logits_actions = self.actor_critic(input_ac).logits_actions[:, -1] / temperature
         act_token = Categorical(logits=logits_actions).sample() if should_sample else logits_actions.argmax(dim=-1)

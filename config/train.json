@@ -13,7 +13,7 @@
 		"device": "cuda",
 		"do_checkpoint": true,
 		"seed": 300,
-		"sequence_length": 30,
+		"sequence_length": 20,
 		"resume": false,
 		"resume_path": "output/2023-07-04_00-10-17"
 	},
@@ -23,9 +23,9 @@
 		"stop_after_epochs": 500,
 		"num_episodes_to_save": 10,
 		"config": {
-			"epsilon": 0.01,
+			"epsilon": 0.1,
 			"should_sample": true,
-			"temperature": 0.5,
+			"temperature": 1.0,
 			"num_steps": 500,
 			"burn_in": 20
 		}
@@ -54,11 +54,11 @@
 			"steps_per_epoch": 200
 		},
 		"world_model": {
-			"batch_num_samples": 32,
+			"batch_num_samples": 4,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
 			"weight_decay": 0.01,
-			"start_after_epochs": 1,
+			"start_after_epochs": 0,
 			"steps_per_epoch": 200
 		},
 		"actor_critic": {
@@ -67,7 +67,7 @@
 			"max_grad_norm": 10.0,
 			"start_after_epochs": 500,
 			"steps_per_epoch": 200,
-			"imagine_horizon": 30,
+			"imagine_horizon": 20,
 			"burn_in": 20,
 			"gamma": 0.995,
 			"lambda_": 0.95,
@@ -84,11 +84,11 @@
 		},
 		"world_model": {
 			"batch_num_samples": 32,
-			"start_after_epochs": 1
+			"start_after_epochs":0
 		},
 		"actor_critic": {
 			"num_episodes_to_save": 32,
-			"horizon": 30,
+			"horizon": 20,
 			"start_after_epochs": 5
 		}
 	}
