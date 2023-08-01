@@ -1,12 +1,12 @@
 {
     "tokenizer": {
         "vocab_size": 1024,
-        "embed_dim": 512,
+        "embed_dim": 256,
         "encoder": {
             "resolution": 256,
             "in_channels": 3,
-            "z_channels": 1024,
-            "ch": 256,
+            "z_channels": 256,
+            "ch": 128,
             "ch_mult": [1, 1, 1, 2, 2, 4],
             "num_res_blocks": 2,
             "attn_resolutions": [16],
@@ -16,8 +16,8 @@
         "decoder": {
             "resolution": 256,
             "in_channels": 3,
-            "z_channels": 1024,
-            "ch": 256,
+            "z_channels": 256,
+            "ch": 128,
             "ch_mult": [1, 1, 1, 2, 2, 4],
             "num_res_blocks": 2,
             "attn_resolutions": [16],

@@ -62,6 +62,9 @@ def init_weights(module):
 def extract_state_dict(state_dict, module_name):
     return OrderedDict({k.split('.', 1)[1]: v for k, v in state_dict.items() if k.startswith(module_name)})
 
+def clean_state_dict(state_dict, remove_str):
+    return OrderedDict({k.replace(remove_str, ""): v for k, v in state_dict.items()})
+
 
 def set_seed(seed):
     np.random.seed(seed)

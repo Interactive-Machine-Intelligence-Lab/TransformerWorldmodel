@@ -17,7 +17,7 @@ from episode import Episode
 from make_reconstructions import make_reconstructions_from_batch
 from models.actor_critic import ActorCritic
 from models.world_model import WorldModel, TransformerConfig
-from utils import configure_optimizer, EpisodeDirManager, set_seed
+from utils import configure_optimizer, EpisodeDirManager, set_seed, clean_state_dict
 
 from config import *
 from envs import make_unity_gym
@@ -131,6 +131,14 @@ class Trainer:
 
         world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=env.num_actions, config=TransformerConfig(**worldmodel_cfg))
         actor_critic = ActorCritic(**ac_cfg, act_vocab_size=env.num_actions)
+
+        tokenizer_state_dict = torch.load("tokenizer.pt")
+        a2c_state_dict = torch.load("alg_jooyeon.pt")
+
+        tokenizer.load_state_dict(clean_state_dict(tokenizer_state_dict, "_orig_mod.module."))
+        actor_critic.load_state_dict(clean_state_dict(a2c_state_dict, "_orig_mod.module."))
+
+
         agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
         agent = torch.compile(agent)
 
