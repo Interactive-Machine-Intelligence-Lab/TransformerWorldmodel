@@ -121,27 +121,32 @@ class Trainer:
         assert self.cfg.training_settings.should or self.cfg.evaluation_settings.should
         env = train_env if self.cfg.training_settings.should else test_env
 
+
+        tokenizer = Tokenizer(
+            vocab_size=tok_cfg.tokenizer.vocab_size, 
+            embed_dim=tok_cfg.tokenizer.embed_dim,
+            encoder=Encoder(EncoderDecoderConfig(**tok_cfg.tokenizer.encoder)),
+            decoder=Decoder(EncoderDecoderConfig(**tok_cfg.tokenizer.decoder))
+        )
+
+        world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=env.num_actions, config=TransformerConfig(**worldmodel_cfg))
+        actor_critic = ActorCritic(**ac_cfg, act_vocab_size=env.num_actions)
+        agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
+        agent = torch.compile(agent)
+
+        optimizer_tokenizer = torch.optim.Adam(agent.tokenizer.parameters(), lr=train_cfg.training_settings.learning_rate)
+        optimizer_world_model = configure_optimizer(agent.world_model, train_cfg.training_settings.learning_rate, train_cfg.training_settings.world_model.weight_decay)
+        optimizer_actor_critic = torch.optim.Adam(agent.actor_critic.parameters(), lr=train_cfg.training_settings.learning_rate)
+
+
         for agent_id in range(self.agent_num):
             print(f"------------- Build Agent and Optimizer(id : {agent_id}) -------------")
-            tokenizer = Tokenizer(
-                vocab_size=tok_cfg.tokenizer.vocab_size, 
-                embed_dim=tok_cfg.tokenizer.embed_dim,
-                encoder=Encoder(EncoderDecoderConfig(**tok_cfg.tokenizer.encoder)),
-                decoder=Decoder(EncoderDecoderConfig(**tok_cfg.tokenizer.decoder))
-            )
-
-            world_model = WorldModel(obs_vocab_size=tokenizer.vocab_size, act_vocab_size=env.num_actions, config=TransformerConfig(**worldmodel_cfg))
-            actor_critic = ActorCritic(**ac_cfg, act_vocab_size=env.num_actions)
-            agent = Agent(tokenizer, world_model, actor_critic).to(self.device)
             self.agents.append(agent)
 
             print(f'{sum(p.numel() for p in agent.tokenizer.parameters())} parameters in agent.tokenizer')
             print(f'{sum(p.numel() for p in agent.actor_critic.parameters())} parameters in agent.actor_critic')
             print(f'{sum(p.numel() for p in agent.world_model.parameters())} parameters in agent.world_model')
 
-            optimizer_tokenizer = torch.optim.Adam(agent.tokenizer.parameters(), lr=train_cfg.training_settings.learning_rate)
-            optimizer_world_model = configure_optimizer(agent.world_model, train_cfg.training_settings.learning_rate, train_cfg.training_settings.world_model.weight_decay)
-            optimizer_actor_critic = torch.optim.Adam(agent.actor_critic.parameters(), lr=train_cfg.training_settings.learning_rate)
 
             self.optimizers_tokenizer.append(optimizer_tokenizer)
             self.optimizers_world_model.append(optimizer_world_model)
@@ -345,3 +350,8 @@ class Trainer:
 
     def finish(self) -> None:
         wandb.finish()
+
+
+if __name__ == "__main__":
+    trainer = Trainer()
+    trainer.run()
