@@ -6,3 +6,4 @@ real
 output*
 .DS_Store
 envs/pushblock
+*.pt

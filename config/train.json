@@ -1,6 +1,6 @@
 {
 	"wandb": {
-		"mode": "offline",
+		"mode": "disabled",
 		"project": "iris-multiagent-new_env",
 		"entity": null,
 		"name": null,
@@ -10,7 +10,7 @@
 	},
 	"common": {
 		"epochs": 200,
-		"device": "cuda:7",
+		"device": "cuda",
 		"do_checkpoint": true,
 		"seed": 300,
 		"sequence_length": 30,
@@ -25,7 +25,7 @@
 		"config": {
 			"epsilon": 0.01,
 			"should_sample": true,
-			"temperature": 1.0,
+			"temperature": 0.5,
 			"num_steps": 500,
 			"burn_in": 20
 		}
@@ -38,19 +38,18 @@
 			"epsilon": 0.0,
 			"should_sample": true,
 			"temperature": 0.5,
-			"num_episodes": 6,
+			"num_episodes": 1,
 			"burn_in": 20
 		}
 	},
 	"training_settings": {
 		"should": true,
-		"learning_rate": 0.0001,
 		"sampling_weights": [0.125, 0.125, 0.25, 0.5],
 		"tokenizer": {
 			"batch_num_samples": 256,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
-			"start_after_epochs": 5,
+			"start_after_epochs": 500,
 			"steps_per_epoch": 200
 		},
 		"world_model": {
@@ -58,14 +57,14 @@
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
 			"weight_decay": 0.01,
-			"start_after_epochs": 25,
+			"start_after_epochs": 1,
 			"steps_per_epoch": 200
 		},
 		"actor_critic": {
 			"batch_num_samples": 32,
 			"grad_acc_steps": 1,
 			"max_grad_norm": 10.0,
-			"start_after_epochs": 70,
+			"start_after_epochs": 500,
 			"steps_per_epoch": 200,
 			"imagine_horizon": 30,
 			"burn_in": 20,
@@ -84,12 +83,12 @@
 		},
 		"world_model": {
 			"batch_num_samples": 32,
-			"start_after_epochs": 25
+			"start_after_epochs": 1
 		},
 		"actor_critic": {
 			"num_episodes_to_save": 32,
 			"horizon": 30,
-			"start_after_epochs": 70
+			"start_after_epochs": 5
 		}
 	}
 }
